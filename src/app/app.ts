@@ -23,7 +23,7 @@ export class AppComponent implements OnInit {
         this.conectado = true;
       },
       error: (err) => {
-        this.mensaje = '❌ Error no se ha podido conectar';
+        this.mensaje = 'Error no se ha podido conectar';
         this.conectado = false;
         console.error('Detalle del error:', err);
       }

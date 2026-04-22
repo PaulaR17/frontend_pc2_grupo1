@@ -1,17 +1,17 @@
 import {
   withHttpTransferCache
-} from "./chunk-TBDKRHKN.js";
+} from "./chunk-XWLC7AVB.js";
 import {
   CommonModule,
   PLATFORM_BROWSER_ID
-} from "./chunk-EFJFJVCK.js";
+} from "./chunk-YX5DSSRB.js";
 import {
   DomAdapter,
   XhrFactory,
   getDOM,
   parseCookieValue,
   setRootDomAdapter
-} from "./chunk-MYAMPNUN.js";
+} from "./chunk-LHMWBY26.js";
 import {
   APP_ID,
   ApplicationModule,
@@ -43,7 +43,6 @@ import {
   Version,
   ViewEncapsulation,
   XSS_SECURITY_URL,
-  __spreadValues,
   _global,
   _sanitizeHtml,
   _sanitizeUrl,
@@ -73,7 +72,10 @@ import {
   ɵɵdefineInjector,
   ɵɵdefineNgModule,
   ɵɵinject
-} from "./chunk-M6J2YPFN.js";
+} from "./chunk-ODDQ4QU6.js";
+import {
+  __spreadValues
+} from "./chunk-PJVWDKLX.js";
 
 // node_modules/@angular/platform-browser/fesm2022/_dom_renderer-chunk.mjs
 var EventManagerPlugin = class {
@@ -1705,7 +1707,7 @@ function provideClientHydration(...features) {
   }
   return makeEnvironmentProviders([typeof ngDevMode !== "undefined" && ngDevMode ? provideEnabledBlockingInitialNavigationDetector() : [], typeof ngDevMode !== "undefined" && ngDevMode ? provideStabilityDebugging() : [], withDomHydration(), featuresKind.has(HydrationFeatureKind.NoHttpTransferCache) || hasHttpTransferCacheOptions ? [] : withHttpTransferCache({}), providers]);
 }
-var VERSION = new Version("21.2.5");
+var VERSION = new Version("21.2.8");
 
 export {
   EventManagerPlugin,
@@ -1744,4 +1746,4 @@ export {
   provideClientHydration,
   VERSION
 };
-//# sourceMappingURL=chunk-OZWLJL7R.js.map
+//# sourceMappingURL=chunk-UJVTTCOH.js.map
