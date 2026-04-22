@@ -19,13 +19,19 @@ export class AppComponent implements OnInit {
   ngOnInit() {
     this.conexionService.probarConexion().subscribe({
       next: (res: any) => {
-        this.mensaje = 'conectao ' + res.status;
+        console.log('Respuesta recibida de Laravel:', res); // Esto saldrá en la consola (F12)
+        
+        // Intentamos sacar el mensaje del objeto res
+        // Si no existe 'status', probamos con 'message', o mostramos el objeto entero
+        const contenido = res.status || res.message || JSON.stringify(res);
+        
+        this.mensaje = 'conectao ' + contenido;
         this.conectado = true;
       },
       error: (err) => {
-        this.mensaje = 'Error no se ha podido conectar';
+        this.mensaje = 'Error: NO conectao';
         this.conectado = false;
-        console.error('Detalle del error:', err);
+        console.error('Error en la suscripción:', err);
       }
     });
   }
