@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common'; 
 import { RouterOutlet } from '@angular/router';
-import { ConexionService } from './conexion.service';
+import { ConexionService } from './conexion';
 
 @Component({
   selector: 'app-root',
@@ -19,11 +19,11 @@ export class AppComponent implements OnInit {
   ngOnInit() {
     this.conexionService.probarConexion().subscribe({
       next: (res: any) => {
-        this.mensaje = '✅ ' + res.status;
+        this.mensaje = 'conectao ' + res.status;
         this.conectado = true;
       },
       error: (err) => {
-        this.mensaje = '❌ Error: No se pudo conectar con Laravel';
+        this.mensaje = '❌ Error no se ha podido conectar';
         this.conectado = false;
         console.error('Detalle del error:', err);
       }
