@@ -1,0 +1,29 @@
+<div class="login-wrapper">
+  <form (ngSubmit)="onLogin()" #loginForm="ngForm" class="login-form">
+    <h2>Bienvenido</h2>
+    
+    <div class="input-group">
+      <label>Email</label>
+      <input 
+        type="email" 
+        name="mail" 
+        [(ngModel)]="loginData.mail" 
+        required 
+        placeholder="tu@email.com">
+    </div>
+
+    <div class="input-group">
+      <label>Contraseña</label>
+      <input 
+        type="password" 
+        name="password" 
+        [(ngModel)]="loginData.password" 
+        required 
+        placeholder="********">
+    </div>
+
+    <button type="submit" [disabled]="!loginForm.valid">Iniciar Sesión</button>
+    
+    <p *ngIf="errorMessage" class="error">{{ errorMessage }}</p>
+  </form>
+</div>
