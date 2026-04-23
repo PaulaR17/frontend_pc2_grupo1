@@ -1,1 +1,19 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  /* Light Mode */
+  --bg-primary: #FFFFFF;    
+  --bg-secondary: #F8F9FA;  
+  --text-main: #212529;     
+  --accent: #0D6EFD;        
+  --warning: #FFC107;      
+  --border: #DEE2E6;        
+}
+
+[data-theme='dark'] {
+  /* Dark Mode */
+  --bg-primary: #1A1D20;    
+  --bg-secondary: #2B3035;  
+  --text-main: #F8F9FA;     
+  --accent: #3788FF;        
+  --warning: #FFCA2C;      
+  --border: #495057;        
+}
