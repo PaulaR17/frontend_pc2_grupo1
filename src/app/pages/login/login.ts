@@ -33,7 +33,7 @@ export class LoginComponent {
           }
           this.router.navigate(['/dashboard']);
         },
-        error: (err: any) => { // Añadimos ': any' para quitar el error TS7006
+        error: (err: any) => { 
           this.errorMessage = 'Credenciales incorrectas.';
           console.error('Error de acceso:', err);
         }
