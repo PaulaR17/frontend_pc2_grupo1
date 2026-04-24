@@ -1,33 +1,17 @@
-import { inject, Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { tap } from 'rxjs';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
   private http = inject(HttpClient);
-  private url = 'http://localhost:8000/api/login';
+  // Esta URL debe ser la de tu php artisan serve
+  private apiUrl = 'http://127.0.0.1:8000/api'; 
 
-  login(credentials: any) {
-    return this.http.post<any>(this.url, credentials).pipe(
-      tap(res => {
-        let token = res.access_token;
-        if (token) {
-          localStorage.setItem('token', token);
-        }
-      })
-    );
-  }
-
-  isLoggedIn(): boolean {
-    let token = localStorage.getItem('token');
-    let authenticated = false;
-    
-    if (token) {
-      authenticated = true;
-    }
-    
-    return authenticated;
+  // AQUÍ ESTÁ EL MÉTODO QUE TE FALTA
+  login(data: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/login`, data);
   }
 }

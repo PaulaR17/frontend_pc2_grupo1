@@ -1,29 +1,41 @@
-<div class="login-wrapper">
-  <form (ngSubmit)="onLogin()" #loginForm="ngForm" class="login-form">
-    <h2>Bienvenido</h2>
-    
-    <div class="input-group">
-      <label>Email</label>
-      <input 
-        type="email" 
-        name="mail" 
-        [(ngModel)]="loginData.mail" 
-        required 
-        placeholder="tu@email.com">
+<div class="login-page">
+  <div class="illustration-side">
+    <div class="welcome-content">
+      <img src="assets/Pet/LoginPet.png" alt="Mascota EcoTraffic" class="mascota-img">
     </div>
+  </div>
 
-    <div class="input-group">
-      <label>Contraseña</label>
-      <input 
-        type="password" 
-        name="password" 
-        [(ngModel)]="loginData.password" 
-        required 
-        placeholder="********">
+  <div class="form-side">
+    <div class="login-card">
+      <div class="login-header">
+        <h2 class="logo">ECO<span>TRAFFIC</span></h2>
+        <p>Inicia sesión para continuar</p>
+      </div>
+
+      <form class="login-form">
+        <div class="input-field-group">
+          <label>Username or Email</label>
+          <div class="input-wrapper">
+            <img src="assets/icon-user.png" class="field-icon">
+            <input type="text" placeholder="tu@email.com">
+          </div>
+        </div>
+
+        <div class="input-field-group">
+          <label>Password</label>
+          <div class="input-wrapper">
+            <img src="assets/icon-lock.png" class="field-icon">
+            <input type="password" placeholder="********">
+          </div>
+        </div>
+
+        <button class="btn-primary">Log In</button>
+
+        <div class="form-footer">
+          <a routerLink="/recovery">Forgot Password?</a>
+          <p>¿No tienes cuenta? <a routerLink="/register">Regístrate</a></p>
+        </div>
+      </form>
     </div>
-
-    <button type="submit" [disabled]="!loginForm.valid">Iniciar Sesión</button>
-    
-    <p *ngIf="errorMessage" class="error">{{ errorMessage }}</p>
-  </form>
+  </div>
 </div>

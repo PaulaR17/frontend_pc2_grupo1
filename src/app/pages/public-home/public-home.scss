@@ -34,6 +34,30 @@ $shadow-google: 0 2px 4px rgba(0,0,0,0.2), 0 -1px 0 rgba(0,0,0,0.02);
   }
 }
 
+.btn-navbar {
+  padding: 10px 22px;
+  border-radius: 25px; /* Botones redondeados */
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn-navbar-filled {
+  background-color: #4ade80; 
+  color: #1a1a1a;
+  border: none;
+  &:hover { background-color: #38c172; }
+}
+
+
+.btn-navbar-outline {
+  background-color: transparent;
+  color: white;
+  border: 1px solid white;
+  &:hover { background-color: rgba(255,255,255,0.1); }
+}
+
 .dashboard-container {
   flex: 1;
   display: grid;
@@ -143,3 +167,134 @@ $shadow-google: 0 2px 4px rgba(0,0,0,0.2), 0 -1px 0 rgba(0,0,0,0.02);
   0% { transform: scale(1); opacity: 0.8; }
   100% { transform: scale(3); opacity: 0; }
 } 
+
+#map {
+  width: 100%;
+  height: 100%; // Ocupará todo el viewport definido en el dashboard-container
+  z-index: 1;
+  background-color: #e5e3df; // Color de fondo mientras cargan los tiles
+}
+
+/* El modal de aviso */
+.limit-overlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999; // Por encima del mapa
+  backdrop-filter: blur(4px);
+}
+
+.limit-card {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  text-align: center;
+  max-width: 400px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+
+  h3 { color: #2a3d2f; margin-bottom: 15px; }
+  p { margin-bottom: 25px; color: #555; }
+}
+
+.info-panel {
+  background-color: white;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.menu-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  background: white;
+  cursor: pointer;
+  font-weight: 500;
+  
+  &.active {
+    background-color: #2d3e33; // El verde oscuro de tu logo
+    color: white;
+    border: none;
+  }
+}
+
+.mascota-container {
+  background: #f5f5f5;
+  border-radius: 15px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  img { width: 100%; height: auto; }
+}
+
+/* Ajuste de iconos en el buscador */
+.search-icon-img {
+  width: 18px;
+  height: 18px;
+  margin-left: 15px;
+  opacity: 0.7;
+}
+
+.go-icon-img {
+  width: 20px;
+  height: 20px;
+}
+
+.pin-icon-img {
+  width: 16px;
+  height: 16px;
+  margin-right: 10px;
+  vertical-align: middle;
+}
+
+/* Recuperar diseño del Sidebar */
+.info-panel {
+  background: #ffffff;
+  border-right: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.mascota-container {
+  width: 100%;
+  height: 220px; /* Altura fija para que no deforme el sidebar */
+  background-color: #ffffff00; /* Verde oscuro ECOTRAFFIC */
+  border-radius: 15px; /* Bordes redondeados */
+  display: flex;
+  align-items: center; /* Centrado vertical */
+  justify-content: center; /* Centrado horizontal */
+  overflow: hidden; /* Corta lo que sobresalga */
+  padding: 10px;
+
+  img {
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain; /* Asegura que la imagen no se estire */
+  }
+}
+
+.menu-btn {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  background: white;
+  font-weight: 600;
+  cursor: pointer;
+
+  &.active {
+    background-color: #2D3E33; /* Color verde oscuro original */
+    color: white;
+    border: none;
+  }
+}
