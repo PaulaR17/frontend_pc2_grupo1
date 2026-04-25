@@ -5,6 +5,8 @@ import { RegisterComponent } from './pages/register/register';
 import { DashboardComponent } from './pages/dashboard/dashboard';
 import { authGuard } from './core/guards/auth-guard';
 import { UserHomeComponent } from './pages/user-home/user-home';
+import { VehiclesComponent } from './pages/vehicles/vehicles';
+
 
 export const routes: Routes = [
   { path: 'home', component: PublicHomeComponent },
@@ -12,6 +14,7 @@ export const routes: Routes = [
   { path: 'register', component: RegisterComponent },
   { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
   { path: 'user-home', component: UserHomeComponent},
+  { path: 'vehicles', component: VehiclesComponent },
   { path: '', redirectTo: '/home', pathMatch: 'full' },
   { path: '**', redirectTo: '/home' }
 ];
