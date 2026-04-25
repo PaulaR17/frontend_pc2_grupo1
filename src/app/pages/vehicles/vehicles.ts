@@ -39,6 +39,9 @@ export class VehiclesComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
 
+  searchCount: number = 0;          // ← agregar
+  savedRoutes: any[] = [];          // ← agregar (o un tipo más específico)
+
   user: any = null;
   userInitials = '';
   userMenuOpen = false;
