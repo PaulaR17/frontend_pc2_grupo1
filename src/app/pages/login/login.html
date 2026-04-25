@@ -12,12 +12,16 @@
         <p>Inicia sesión para continuar</p>
       </div>
 
-      <form class="login-form">
+      <form class="login-form" (ngSubmit)="onLogin()">
         <div class="input-field-group">
           <label>Username or Email</label>
           <div class="input-wrapper">
             <img src="assets/Icons/icon-mail.png" class="field-icon">
-            <input type="text" placeholder="tu@email.com">
+            <input 
+              type="text" 
+              name="mail"
+              [(ngModel)]="loginData.mail"
+              placeholder="tu@email.com">
           </div>
         </div>
 
@@ -25,11 +29,17 @@
           <label>Password</label>
           <div class="input-wrapper">
             <img src="assets/Icons/icon-lock.png" class="field-icon">
-            <input type="password" placeholder="********">
+            <input 
+              type="password" 
+              name="password"
+              [(ngModel)]="loginData.password"
+              placeholder="********">
           </div>
         </div>
 
-        <button class="btn-primary">Log In</button>
+        <p *ngIf="errorMessage" style="color: red;">{{ errorMessage }}</p>
+
+        <button type="submit" class="btn-primary">Log In</button>
 
         <div class="form-footer">
           <a routerLink="/recovery">¿Olvidaste tu contraseña?</a>

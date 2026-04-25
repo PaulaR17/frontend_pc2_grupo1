@@ -1,16 +1,37 @@
-import { TestBed } from "@angular/core/testing";
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 
-import { PublicData } from "./public-data";
+@Injectable({
+  providedIn: 'root'
+})
+export class PublicDataService {
+  private http = inject(HttpClient);
+  private apiUrl = 'http://127.0.0.1:8000/api';
 
-describe("PublicData", () => {
-  let service: PublicData;
+  createGuestSession(): Observable<any> {
+    return this.http.post(`${this.apiUrl}/guest/sessions`, {});
+  }
 
-  beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(PublicData);
-  });
+  getQuota(sessionId: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/guest/sessions/${sessionId}/quota`);
+  }
 
-  it("should be created", () => {
-    expect(service).toBeTruthy();
-  });
-});
+  searchLocation(query: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/locations/search?q=${encodeURIComponent(query)}&limit=1`);
+  }
+
+  calculateGuestRoute(sessionId: string, destination: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/guest/sessions/${sessionId}/routes?include=summary`, {
+      origin: {
+        lat: 40.4167,
+        lon: -3.7033
+      },
+      destination: {
+        lat: destination.lat,
+        lon: destination.lon
+      },
+      profile: 'driving-car'
+    });
+  }
+}

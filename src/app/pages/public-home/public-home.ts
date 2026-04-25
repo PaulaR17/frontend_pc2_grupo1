@@ -14,22 +14,21 @@ import * as L from 'leaflet';
 })
 export class PublicHomeComponent implements OnInit, AfterViewInit {
   private dataService = inject(PublicDataService);
-  
-  // Estado de sesión y búsqueda
+
   guestId: string | null = null;
-  searchCount: number = 0;
-  showLimitModal: boolean = false;
-  searchQuery: string = ''; 
-  
-  // Sugerencias de zonas
-  zonasDisponibles: string[] = ['Centro', 'Arganzuela', 'Retiro', 'Salamanca', 'Chamartín', 
-            'Tetuán', 'Chamberí', 'Fuencarral-El Pardo', 'Moncloa-Aravaca', 
-            'Latina', 'Carabanchel', 'Usera', 'Puente de Vallecas', 
-            'Moratalaz', 'Ciudad Lineal', 'Hortaleza', 'Villaverde', 
-            'Villa de Vallecas', 'Vicálvaro', 'San Blas-Canillejas', 'Barajas'];
-  mostrarSugerencias: boolean = false;
-  
-  // Mapa
+  searchCount = 0;
+  showLimitModal = false;
+  searchQuery = '';
+  mostrarSugerencias = false;
+
+  zonasDisponibles: string[] = [
+    'Centro', 'Arganzuela', 'Retiro', 'Salamanca', 'Chamartín',
+    'Tetuán', 'Chamberí', 'Fuencarral-El Pardo', 'Moncloa-Aravaca',
+    'Latina', 'Carabanchel', 'Usera', 'Puente de Vallecas',
+    'Moratalaz', 'Ciudad Lineal', 'Hortaleza', 'Villaverde',
+    'Villa de Vallecas', 'Vicálvaro', 'San Blas-Canillejas', 'Barajas'
+  ];
+
   private map!: L.Map;
   private zoneLayer: L.LayerGroup = L.layerGroup();
 
@@ -39,14 +38,9 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
         this.guestId = res.session_id;
         localStorage.setItem('guest_id', res.session_id);
         this.checkQuota(res.session_id);
-      }
-    });
-  }
-
-  private checkQuota(id: string): void {
-    this.dataService.getQuota(id).subscribe({
-      next: (res: any) => {
-        this.searchCount = res.search_count;
+      },
+      error: (err: any) => {
+        console.error('Error creando sesión de invitado:', err);
       }
     });
   }
@@ -55,56 +49,108 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
     this.initMap();
   }
 
+  private checkQuota(sessionId: string): void {
+    this.dataService.getQuota(sessionId).subscribe({
+      next: (res: any) => {
+        this.searchCount = res.search_count ?? 0;
+      },
+      error: (err: any) => {
+        console.error('Error consultando cuota:', err);
+      }
+    });
+  }
+
   private initMap(): void {
     this.map = L.map('map', {
       center: [40.4167, -3.7033],
       zoom: 12,
       zoomControl: false
     });
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
+
     this.zoneLayer.addTo(this.map);
   }
 
   onSearch(): void {
-    const id = this.guestId;
     const query = this.searchQuery.trim();
 
-    if (id !== null && query !== '') {
-      this.executeSearchLogic(id, query);
+    if (!this.guestId || query === '') {
+      return;
     }
+
+    this.executeSearchLogic(this.guestId, query);
   }
 
-  private executeSearchLogic(id: string, query: string): void {
-    if (this.searchCount < 3) {
-      this.dataService.searchByZone(id, query).subscribe({
-        next: (res: any) => {
-          this.searchCount = res.new_count;
-          this.mostrarSugerencias = false;
-          this.displayZoneOnMap(res.zone_data);
-        },
-        error: (err: any) => {
-          if (err.status === 403) {
-            this.showLimitModal = true;
-          }
-        }
-      });
+  private executeSearchLogic(sessionId: string, query: string): void {
+    if (this.searchCount >= 4) {
+      this.showLimitModal = true;
+      return;
     }
 
-    if (this.searchCount >= 3) {
-      this.showLimitModal = true;
-    }
+    this.dataService.searchLocation(query).subscribe({
+      next: (searchRes: any) => {
+        const destination = searchRes.results?.[0];
+
+        if (!destination) {
+          console.warn('No se encontró ubicación para:', query);
+          return;
+        }
+
+        this.dataService.calculateGuestRoute(sessionId, destination).subscribe({
+          next: (routeRes: any) => {
+            this.searchCount = routeRes.search_count ?? this.searchCount + 1;
+            this.mostrarSugerencias = false;
+
+            this.displayZoneOnMap({
+              latitude: destination.lat,
+              longitude: destination.lon,
+              text: destination.text,
+              summary: routeRes.summary
+            });
+          },
+          error: (err: any) => {
+  console.error('Error calculando ruta:', err);
+
+  this.searchCount++;
+
+  this.displayZoneOnMap({
+    latitude: destination.lat,
+    longitude: destination.lon,
+    text: destination.text
+  });
+
+  if (err.status === 403 || err.status === 429) {
+    this.showLimitModal = true;
+  }
+}
+        });
+      },
+      error: (err: any) => {
+        console.error('Error buscando ubicación:', err);
+      }
+    });
   }
 
   private displayZoneOnMap(zone: any): void {
     this.zoneLayer.clearLayers();
-    // Coordenadas fallback por si el back no las trae
-    const lat = zone?.latitude || 40.4167;
-    const lng = zone?.longitude || -3.7033;
-    
+
+    const lat = zone?.latitude ?? 40.4167;
+    const lng = zone?.longitude ?? -3.7033;
+    const text = zone?.text ?? this.searchQuery;
+
+    let popup = `<b>${text}</b>`;
+
+    if (zone?.summary) {
+      popup += `<br>Distancia: ${zone.summary.distance_km ?? '-'} km`;
+      popup += `<br>Duración: ${zone.summary.duration_min ?? '-'} min`;
+    }
+
     this.map.flyTo([lat, lng], 14);
+
     L.marker([lat, lng])
       .addTo(this.zoneLayer)
-      .bindPopup(`<b>Zona: ${this.searchQuery}</b>`)
+      .bindPopup(popup)
       .openPopup();
   }
 
@@ -116,7 +162,9 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
 
   @HostListener('document:click', ['$event'])
   clickOut(event: Event): void {
-    if (!(event.target as HTMLElement).closest('.search-wrapper')) {
+    const target = event.target as HTMLElement;
+
+    if (!target.closest('.search-wrapper')) {
       this.mostrarSugerencias = false;
     }
   }
