@@ -1,22 +1,40 @@
 <div style="padding: 2rem;">
-  <h1>¡Panel de Control!</h1>
-  <p>Si estás viendo esto, el token de Laravel es válido y el Guardián te ha dejado pasar.</p>
+  <h1>Panel de administración</h1>
+  <p>Resumen general de usuarios e incidencias de EcoTraffic.</p>
 
   <hr>
 
-  <h2>Usuario conectado</h2>
-
-  <div *ngIf="user">
-    <p><strong>ID:</strong> {{ user.id }}</p>
-    <p><strong>Nombre:</strong> {{ user.name }}</p>
-    <p><strong>Email:</strong> {{ user.mail }}</p>
-    <p><strong>Rol:</strong> {{ user.rol }}</p>
-    <p><strong>Estado:</strong> {{ user.status }}</p>
-  </div>
-
+  <p *ngIf="loading">Cargando datos...</p>
   <p *ngIf="errorMessage" style="color: red;">{{ errorMessage }}</p>
 
-  <button (click)="logout()" style="padding: 10px; cursor: pointer;">
-    Cerrar Sesión
+  <div *ngIf="dashboard && !loading" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1.5rem;">
+    <article style="padding: 1rem; border: 1px solid #ddd; border-radius: 12px;">
+      <h2>{{ dashboard.users_total }}</h2>
+      <p>Usuarios totales</p>
+    </article>
+
+    <article style="padding: 1rem; border: 1px solid #ddd; border-radius: 12px;">
+      <h2>{{ dashboard.users_active }}</h2>
+      <p>Usuarios activos</p>
+    </article>
+
+    <article style="padding: 1rem; border: 1px solid #ddd; border-radius: 12px;">
+      <h2>{{ dashboard.users_inactive }}</h2>
+      <p>Usuarios inactivos</p>
+    </article>
+
+    <article style="padding: 1rem; border: 1px solid #ddd; border-radius: 12px;">
+      <h2>{{ dashboard.incidents_total }}</h2>
+      <p>Incidencias totales</p>
+    </article>
+
+    <article style="padding: 1rem; border: 1px solid #ddd; border-radius: 12px;">
+      <h2>{{ dashboard.incidents_active }}</h2>
+      <p>Incidencias activas</p>
+    </article>
+  </div>
+
+  <button (click)="logout()" style="padding: 10px; cursor: pointer; margin-top: 2rem;">
+    Cerrar sesión
   </button>
 </div>

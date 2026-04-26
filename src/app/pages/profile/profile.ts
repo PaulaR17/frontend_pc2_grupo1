@@ -3,12 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth';
+import { BackendVehicle, FuelType, VehiclePayload, VehicleService } from '../../core/services/vehicle';
 
-interface Vehicle {
+interface ProfileVehicleForm {
   brand: string;
   model: string;
   plate: string;
-  type: string;
+  fuel_type: FuelType | '';
 }
 
 @Component({
@@ -20,55 +21,100 @@ interface Vehicle {
 })
 export class ProfileComponent implements OnInit {
   private authService = inject(AuthService);
-  private router      = inject(Router);
+  private vehicleService = inject(VehicleService);
+  private router = inject(Router);
 
-  // ── User state ────────────────────────────────────────────
   user: any = null;
   userInitials = '';
   userMenuOpen = false;
   avatarPreview: string | null = null;
 
-  // ── Active section ────────────────────────────────────────
   activeSection: 'personal' | 'seguridad' | 'vehiculos' | 'preferencias' = 'personal';
 
-  // ── Stats ─────────────────────────────────────────────────
-  searchCount       = 0;
-  savedRoutesCount  = 0;
-  ecoScore          = 0;
+  searchCount = 0;
+  savedRoutesCount = 0;
+  ecoScore = 0;
 
-  // ── Personal form ─────────────────────────────────────────
   form = { name: '', mail: '', phone: '', city: '', bio: '' };
-  saving     = false;
+  saving = false;
   saveSuccess = false;
+  saveError = '';
 
-  // ── Security ──────────────────────────────────────────────
   passwords = { current: '', new: '', confirm: '' };
-  showPass  = { current: false, new: false, confirm: false };
+  showPass = { current: false, new: false, confirm: false };
+
+  vehicles: BackendVehicle[] = [];
+  addingVehicle = false;
+  vehicleError = '';
+  newVehicle: ProfileVehicleForm = {
+    brand: '',
+    model: '',
+    plate: '',
+    fuel_type: ''
+  };
+
+  prefs = {
+    emailNotifications: true,
+    ecoRoutes: true,
+    liveTraffic: false,
+    saveHistory: true
+  };
 
   get passwordStrength(): number {
-    const p = this.passwords.new;
-    if (!p) return 0;
+    const password = this.passwords.new;
+
+    if (!password) {
+      return 0;
+    }
+
     let score = 0;
-    if (p.length >= 8)          score += 25;
-    if (/[A-Z]/.test(p))        score += 25;
-    if (/[0-9]/.test(p))        score += 25;
-    if (/[^A-Za-z0-9]/.test(p)) score += 25;
+
+    if (password.length >= 8) {
+      score += 25;
+    }
+
+    if (/[A-Z]/.test(password)) {
+      score += 25;
+    }
+
+    if (/[0-9]/.test(password)) {
+      score += 25;
+    }
+
+    if (/[^A-Za-z0-9]/.test(password)) {
+      score += 25;
+    }
+
     return score;
   }
 
   get passwordStrengthClass(): string {
-    const s = this.passwordStrength;
-    if (s <= 25) return 'weak';
-    if (s <= 50) return 'fair';
-    if (s <= 75) return 'good';
+    const strength = this.passwordStrength;
+
+    if (strength <= 25) {
+      return 'weak';
+    }
+
+    if (strength <= 50) {
+      return 'fair';
+    }
+
+    if (strength <= 75) {
+      return 'good';
+    }
+
     return 'strong';
   }
 
   get passwordStrengthLabel(): string {
-    const map: Record<string, string> = {
-      weak: 'Débil', fair: 'Regular', good: 'Buena', strong: 'Fuerte'
+    const labels: Record<string, string> = {
+      weak: 'Débil',
+      fair: 'Regular',
+      good: 'Buena',
+      strong: 'Fuerte'
     };
-    return map[this.passwordStrengthClass];
+
+    return labels[this.passwordStrengthClass];
   }
 
   get canChangePassword(): boolean {
@@ -80,110 +126,156 @@ export class ProfileComponent implements OnInit {
     );
   }
 
-  // ── Vehicles ──────────────────────────────────────────────
-  vehicles: Vehicle[] = [];
-  addingVehicle = false;
-  newVehicle: Vehicle = { brand: '', model: '', plate: '', type: '' };
-
-  // ── Preferences ───────────────────────────────────────────
-  prefs = {
-    emailNotifications: true,
-    ecoRoutes:          true,
-    liveTraffic:        false,
-    saveHistory:        true
-  };
-
-  // ─────────────────────────────────────────────────────────
-
   ngOnInit(): void {
-     const id = localStorage.getItem('user_id');
-    this.authService.getUser(Number(id)).subscribe({
-      next: (res: any) => {
-        this.user = res;
-        this.form.name = res.name ?? '';
-        this.form.mail = res.mail ?? '';
-        this.form.phone = res.phone ?? '';
-        this.form.city  = res.city  ?? '';
-        this.form.bio   = res.bio   ?? '';
-        this.userInitials = this.buildInitials(res.name);
-        this.ecoScore = res.eco_score ?? Math.floor(Math.random() * 40) + 60;
-      }
-    });
+    const userId = this.authService.getCurrentUserId();
 
-    const stored = localStorage.getItem('saved_routes');
-    this.savedRoutesCount = stored ? JSON.parse(stored).length : 0;
-    this.searchCount = Number(localStorage.getItem('search_count') ?? 0);
+    if (!userId) {
+      this.router.navigate(['/login']);
+      return;
+    }
 
-    const storedVehicles = localStorage.getItem('vehicles');
-    if (storedVehicles) this.vehicles = JSON.parse(storedVehicles);
-
-    const storedPrefs = localStorage.getItem('eco_prefs');
-    if (storedPrefs) this.prefs = { ...this.prefs, ...JSON.parse(storedPrefs) };
+    this.loadUser(userId);
+    this.loadVehicles(userId);
+    this.loadLocalStats();
+    this.loadPreferences();
   }
 
-  // ── Avatar ────────────────────────────────────────────────
   onAvatarChange(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
-    if (!file) return;
+
+    if (!file) {
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = e => this.avatarPreview = e.target?.result as string;
     reader.readAsDataURL(file);
   }
 
-  // ── Personal ─────────────────────────────────────────────
   saveProfile(): void {
+    const userId = this.authService.getCurrentUserId();
+
+    if (!userId) {
+      this.router.navigate(['/login']);
+      return;
+    }
+
     this.saving = true;
-    // Simulate API call
-    setTimeout(() => {
-      this.saving = false;
-      this.saveSuccess = true;
-      this.userInitials = this.buildInitials(this.form.name);
-      setTimeout(() => this.saveSuccess = false, 3000);
-    }, 900);
+    this.saveSuccess = false;
+    this.saveError = '';
+
+    this.authService.updateUser(userId, {
+      name: this.form.name,
+      mail: this.form.mail
+    }).subscribe({
+      next: (res: any) => {
+        this.user = res;
+        this.saving = false;
+        this.saveSuccess = true;
+        this.userInitials = this.buildInitials(this.form.name);
+
+        localStorage.setItem('user_name', res.name ?? this.form.name);
+        localStorage.setItem('user_mail', res.mail ?? this.form.mail);
+        localStorage.setItem('profile_extra_data', JSON.stringify({
+          phone: this.form.phone,
+          city: this.form.city,
+          bio: this.form.bio
+        }));
+
+        setTimeout(() => this.saveSuccess = false, 3000);
+      },
+      error: () => {
+        this.saving = false;
+        this.saveError = 'No se pudieron guardar los cambios.';
+      }
+    });
   }
 
   resetForm(): void {
-    if (!this.user) return;
-    this.form.name  = this.user.name  ?? '';
-    this.form.mail  = this.user.mail  ?? '';
-    this.form.phone = this.user.phone ?? '';
-    this.form.city  = this.user.city  ?? '';
-    this.form.bio   = this.user.bio   ?? '';
+    if (!this.user) {
+      return;
+    }
+
+    const extraData = this.getProfileExtraData();
+
+    this.form.name = this.user.name ?? '';
+    this.form.mail = this.user.mail ?? '';
+    this.form.phone = extraData.phone ?? '';
+    this.form.city = extraData.city ?? '';
+    this.form.bio = extraData.bio ?? '';
   }
 
-  // ── Security ──────────────────────────────────────────────
   changePassword(): void {
-    if (!this.canChangePassword) return;
-    // TODO: call authService.changePassword(...)
-    alert('Contraseña actualizada correctamente');
+    if (!this.canChangePassword) {
+      return;
+    }
+
+    alert('Cambio de contraseña pendiente de endpoint en backend.');
     this.passwords = { current: '', new: '', confirm: '' };
   }
 
-  // ── Vehicles ──────────────────────────────────────────────
   addVehicle(): void {
-    if (!this.newVehicle.brand || !this.newVehicle.model) return;
-    this.vehicles.unshift({ ...this.newVehicle });
-    localStorage.setItem('vehicles', JSON.stringify(this.vehicles));
-    this.resetNewVehicle();
-    this.addingVehicle = false;
+    const userId = this.authService.getCurrentUserId();
+
+    if (!userId || !this.newVehicle.brand || !this.newVehicle.model || !this.newVehicle.fuel_type) {
+      this.vehicleError = 'Rellena marca, modelo y tipo de combustible.';
+      return;
+    }
+
+    const payload: VehiclePayload = {
+      type: 'CAR',
+      brand: this.newVehicle.brand,
+      model: this.newVehicle.model,
+      plate: this.newVehicle.plate || null,
+      fuel_type: this.newVehicle.fuel_type,
+      is_electric: this.newVehicle.fuel_type === 'electric' || this.newVehicle.fuel_type === 'hybrid'
+    };
+
+    this.vehicleService.createVehicle(userId, payload).subscribe({
+      next: (vehicle: BackendVehicle) => {
+        this.vehicles.unshift(vehicle);
+        this.resetNewVehicle();
+        this.addingVehicle = false;
+        this.vehicleError = '';
+      },
+      error: () => {
+        this.vehicleError = 'No se pudo guardar el vehículo.';
+      }
+    });
   }
 
   removeVehicle(index: number): void {
-    this.vehicles.splice(index, 1);
-    localStorage.setItem('vehicles', JSON.stringify(this.vehicles));
+    const userId = this.authService.getCurrentUserId();
+    const vehicle = this.vehicles[index];
+
+    if (!userId || !vehicle) {
+      return;
+    }
+
+    this.vehicleService.deleteVehicle(userId, vehicle.id).subscribe({
+      next: () => {
+        this.vehicles.splice(index, 1);
+      },
+      error: () => {
+        this.vehicleError = 'No se pudo eliminar el vehículo.';
+      }
+    });
   }
 
   resetNewVehicle(): void {
-    this.newVehicle = { brand: '', model: '', plate: '', type: '' };
+    this.newVehicle = {
+      brand: '',
+      model: '',
+      plate: '',
+      fuel_type: ''
+    };
   }
 
-  // ── Preferences ───────────────────────────────────────────
   savePrefs(): void {
     localStorage.setItem('eco_prefs', JSON.stringify(this.prefs));
     alert('Preferencias guardadas');
   }
 
-  // ── Nav ───────────────────────────────────────────────────
   toggleUserMenu(): void {
     this.userMenuOpen = !this.userMenuOpen;
   }
@@ -193,9 +285,72 @@ export class ProfileComponent implements OnInit {
     this.router.navigate(['/login']);
   }
 
+  private loadUser(userId: number): void {
+    this.authService.getUser(userId).subscribe({
+      next: (res: any) => {
+        const extraData = this.getProfileExtraData();
+
+        this.user = res;
+        this.form.name = res.name ?? '';
+        this.form.mail = res.mail ?? '';
+        this.form.phone = extraData.phone ?? '';
+        this.form.city = extraData.city ?? '';
+        this.form.bio = extraData.bio ?? '';
+        this.userInitials = this.buildInitials(res.name);
+        this.ecoScore = res.eco_score ?? 75;
+      },
+      error: () => {
+        this.router.navigate(['/login']);
+      }
+    });
+  }
+
+  private loadVehicles(userId: number): void {
+    this.vehicleService.getVehicles(userId).subscribe({
+      next: (vehicles: BackendVehicle[]) => {
+        this.vehicles = vehicles;
+      },
+      error: () => {
+        this.vehicleError = 'No se pudieron cargar los vehículos.';
+      }
+    });
+  }
+
+  private loadLocalStats(): void {
+    const storedRoutes = localStorage.getItem('saved_routes');
+    this.savedRoutesCount = storedRoutes ? JSON.parse(storedRoutes).length : 0;
+    this.searchCount = Number(localStorage.getItem('search_count') ?? 0);
+  }
+
+  private loadPreferences(): void {
+    const storedPrefs = localStorage.getItem('eco_prefs');
+
+    if (storedPrefs) {
+      this.prefs = { ...this.prefs, ...JSON.parse(storedPrefs) };
+    }
+  }
+
+  private getProfileExtraData(): { phone?: string; city?: string; bio?: string } {
+    const storedData = localStorage.getItem('profile_extra_data');
+
+    if (!storedData) {
+      return {};
+    }
+
+    try {
+      return JSON.parse(storedData);
+    } catch {
+      return {};
+    }
+  }
+
   private buildInitials(name: string): string {
-    if (!name) return '?';
+    if (!name) {
+      return '?';
+    }
+
     const parts = name.trim().split(' ');
+
     return parts.length >= 2
       ? (parts[0][0] + parts[1][0]).toUpperCase()
       : parts[0][0].toUpperCase();
@@ -204,6 +359,9 @@ export class ProfileComponent implements OnInit {
   @HostListener('document:click', ['$event'])
   clickOut(event: Event): void {
     const target = event.target as HTMLElement;
-    if (!target.closest('.nav-actions')) this.userMenuOpen = false;
+
+    if (!target.closest('.nav-actions')) {
+      this.userMenuOpen = false;
+    }
   }
 }

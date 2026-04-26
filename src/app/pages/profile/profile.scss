@@ -153,5 +153,5 @@ $bg: #f4f7f4;
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; .full { grid-column: 1 / -1; } }
 .field-group { display: flex; flex-direction: column; gap: 6px; label { font-size: 11px; font-weight: 700; color: #555; text-transform: uppercase; } }
 .input-wrap { display: flex; align-items: center; gap: 12px; background: #f9fafb; border: 1.5px solid #e5e7eb; border-radius: 12px; padding: 0 15px; margin-top: 5px; input, textarea { border: none; background: transparent; padding: 12px 0; width: 100%; outline: none; font-size: 14px; } }
-.btn-cancel { background: linear-gradient(135deg, #c52d22 0%, ); color: $primary-dark; font-weight: 700; border: none; padding: 12px 24px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 10px; margin-top: 20px; }
+.btn-cancel { background: #f3f4f6; color: $primary-dark; font-weight: 700; border: none; padding: 12px 24px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 10px; margin-top: 20px; }
 .btn-save { background: linear-gradient(135deg, #22c55e 0%, $accent-green 100%); color: $primary-dark; font-weight: 700; border: none; padding: 12px 24px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 10px; margin-top: 20px; }

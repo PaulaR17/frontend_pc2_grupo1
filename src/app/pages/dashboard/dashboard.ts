@@ -14,17 +14,19 @@ export class DashboardComponent implements OnInit {
   private router = inject(Router);
   private authService = inject(AuthService);
 
-  user: any = null;
+  dashboard: any = null;
+  loading = true;
   errorMessage = '';
 
   ngOnInit(): void {
-    this.authService.getUser(1).subscribe({
+    this.authService.getAdminDashboard().subscribe({
       next: (res: any) => {
-        this.user = res;
+        this.dashboard = res;
+        this.loading = false;
       },
-      error: (err: any) => {
-        this.errorMessage = 'No se pudo cargar el usuario desde Laravel.';
-        console.error(err);
+      error: () => {
+        this.loading = false;
+        this.errorMessage = 'No se pudo cargar el panel de administración.';
       }
     });
   }
