@@ -96,7 +96,8 @@ export class ProfileComponent implements OnInit {
   // ─────────────────────────────────────────────────────────
 
   ngOnInit(): void {
-    this.authService.getUser(1).subscribe({
+     const id = localStorage.getItem('user_id');
+    this.authService.getUser(Number(id)).subscribe({
       next: (res: any) => {
         this.user = res;
         this.form.name = res.name ?? '';

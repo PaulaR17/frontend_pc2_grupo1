@@ -51,21 +51,26 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
   private zoneLayer: L.LayerGroup = L.layerGroup();
 
   ngOnInit(): void {
-    this.authService.getUser(1).subscribe({
+  const id = localStorage.getItem('user_id');
+  console.log("ID cargado en Home:", id);
+  
+  if (id) {
+    this.authService.getUser(Number(id)).subscribe({
       next: (res: any) => {
         this.user = res;
         this.userInitials = this.buildInitials(res.name);
         this.ecoScore = res.eco_score ?? Math.floor(Math.random() * 40) + 60;
+        console.log("Usuario cargado con éxito:", this.user.name);
       },
-      //error: () => this.router.navigate(['/login'])
+      error: (err) => {
+        console.error("Error cargando usuario:", err);
+        this.logout(); 
+      }
     });
-
-    // Load saved routes from localStorage (or service)
-    const stored = localStorage.getItem('saved_routes');
-    if (stored) {
-      this.savedRoutes = JSON.parse(stored);
-    }
+  } else {
+    this.logout();
   }
+}
 
   ngAfterViewInit(): void {
     this.initMap();

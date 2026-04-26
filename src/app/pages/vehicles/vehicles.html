@@ -424,13 +424,11 @@
 
     <div class="modal-footer">
       <button type="button" class="btn-cancel" (click)="closeModal()" [disabled]="saving">Cancelar</button>
-
       <button type="button" class="btn-save" (click)="saveVehicle()" [disabled]="saving || !form.brand || !form.model"></button>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <polyline points="20 6 9 17 4 12"/>
         </svg>
         {{ saving ? 'Guardando...' : (editingVehicle ? 'Guardar cambios' : 'Añadir vehículo') }}
-      </button>
     </div>
   </div>
 </div>

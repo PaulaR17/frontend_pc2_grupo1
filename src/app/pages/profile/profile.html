@@ -1,7 +1,7 @@
 <div class="main-wrapper">
 
   <nav class="top-nav">
-    <a routerLink="/home" class="logo">ECO<span>TRAFFIC</span></a>
+    <a routerLink="/user-home" class="logo">ECO<span>TRAFFIC</span></a>
     
     <div class="nav-actions">
       <div class="user-pill" (click)="toggleUserMenu()" [class.open]="userMenuOpen">
@@ -11,7 +11,7 @@
       </div>
 
       <div class="user-dropdown" *ngIf="userMenuOpen">
-        <a class="dropdown-item" routerLink="/home">
+        <a class="dropdown-item" routerLink="/user-home">
           <img src="assets/Icons/home-icon.png" class="dropdown-icon-img" alt="">
           Inicio
         </a>

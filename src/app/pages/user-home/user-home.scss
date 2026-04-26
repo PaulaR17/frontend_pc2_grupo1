@@ -77,6 +77,11 @@ $bg-main: #f8fafc;
     flex-shrink: 0; // Para que no se aplaste
   }
 
+  .logo {
+    color: $white; font-weight: 800; font-size: 1.2rem;
+    span { color: $accent-green; }
+  }
+
   .user-name-nav {
     color: #ffffff !important; // FUERZA EL COLOR BLANCO
     font-size: 14px;

@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
+import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root'
@@ -8,12 +9,14 @@ import { Observable, tap } from 'rxjs';
 export class AuthService {
   private http = inject(HttpClient);
   private apiUrl = 'http://127.0.0.1:8000/api';
+  private router = inject(Router);
 
   login(data: { mail: string; password: string }): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/login`, data).pipe(
       tap((response: any) => {
         this.saveSession(response);
       })
+      
     );
   }
 
@@ -54,13 +57,11 @@ export class AuthService {
     });
   }
 
-  logout(): void {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user_id');
-    localStorage.removeItem('user_name');
-    localStorage.removeItem('user_mail');
-    localStorage.removeItem('user_role');
-  }
+logout() {
+  localStorage.clear(); 
+  sessionStorage.clear();
+  this.router.navigate(['/login']);
+}
 
   isLoggedIn(): boolean {
     return !!localStorage.getItem('token');
@@ -88,16 +89,20 @@ export class AuthService {
     });
   }
 
-  private saveSession(response: any): void {
-    if (response.access_token) {
-      localStorage.setItem('token', response.access_token);
-    }
+private saveSession(response: any): void {
+  localStorage.clear(); 
+  console.log("Limpieza total: Paula ha salido del sistema.");
 
-    if (response.user) {
-      localStorage.setItem('user_id', String(response.user.id));
-      localStorage.setItem('user_name', response.user.name ?? '');
-      localStorage.setItem('user_mail', response.user.mail ?? '');
-      localStorage.setItem('user_role', response.user.rol ?? '');
-    }
+  if (response.access_token) {
+    localStorage.setItem('token', response.access_token);
   }
+
+  if (response.user) {
+    localStorage.setItem('user_id', String(response.user.id));
+    localStorage.setItem('user_name', response.user.name);
+    localStorage.setItem('user_mail', response.user.mail);
+    
+    console.log(`Bienvenido Mateo (ID: ${response.user.id})`);
+  }
+}
 }
