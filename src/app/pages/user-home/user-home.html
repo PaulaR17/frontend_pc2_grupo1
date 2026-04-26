@@ -88,9 +88,9 @@
           <img src="assets/Icons/history-icon.png" class="menu-icon-img" alt="">
           Historial
         </button>
-        <button class="menu-btn" [class.active]="activeTab === 'vehiculos'" (click)="activeTab = 'vehiculos'">
-          <img src="assets/Icons/car-icon.png" class="menu-icon-img" alt="">
-          Mis vehículos
+        <button class="aside-btn" [class.active]="activeSection === 'vehiculos'" (click)="goToVehicles()">
+        <img src="assets/Icons/car-icon.png" class="menu-icon-img" alt="">
+        Mis vehículos
         </button>
         <button class="menu-btn" [class.active]="activeTab === 'mascota'" (click)="activeTab = 'mascota'">
           <img src="assets/Icons/pet-tab-icon.png" class="menu-icon-img" alt="">

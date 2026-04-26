@@ -3,35 +3,33 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
 
-export interface LoginPayload {
-  mail: string;
-  password: string;
-}
-
-export interface RegisterPayload {
-  name: string;
-  mail: string;
-  password: string;
-  password_confirmation: string;
-}
-
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
+
   private apiUrl = 'http://127.0.0.1:8000/api';
 
-  login(data: LoginPayload): Observable<any> {
+  login(data: { mail: string; password: string }): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/login`, data).pipe(
-      tap((response: any) => this.saveSession(response))
+      tap((response: any) => {
+        this.saveSession(response);
+      })
     );
   }
 
-  register(data: RegisterPayload): Observable<any> {
+  register(data: {
+    name: string;
+    mail: string;
+    password: string;
+    password_confirmation: string;
+  }): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/register`, data).pipe(
-      tap((response: any) => this.saveSession(response))
+      tap((response: any) => {
+        this.saveSession(response);
+      })
     );
   }
 
@@ -47,14 +45,8 @@ export class AuthService {
     });
   }
 
-  updateUser(userId: number, data: { name?: string; mail?: string }): Observable<any> {
+  updateUser(userId: number, data: any): Observable<any> {
     return this.http.put<any>(`${this.apiUrl}/users/${userId}`, data, {
-      headers: this.getAuthHeaders()
-    });
-  }
-
-  getAdminDashboard(): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/admin/dashboard`, {
       headers: this.getAuthHeaders()
     });
   }
@@ -76,26 +68,24 @@ export class AuthService {
   }
 
   isAdmin(): boolean {
-    return this.getCurrentUserRole() === 'ADMIN';
+    return localStorage.getItem('user_role') === 'ADMIN';
   }
 
   getCurrentUserId(): number | null {
     const rawId = localStorage.getItem('user_id');
-
-    if (!rawId) {
-      return null;
-    }
-
-    const parsedId = Number(rawId);
-    return Number.isNaN(parsedId) ? null : parsedId;
+    return rawId ? Number(rawId) : null;
   }
 
   getCurrentUserRole(): string | null {
     return localStorage.getItem('user_role');
   }
 
+  getCurrentToken(): string | null {
+    return localStorage.getItem('token');
+  }
+
   getAuthHeaders(): HttpHeaders {
-    const token = localStorage.getItem('token') || '';
+    const token = this.getCurrentToken() || '';
 
     return new HttpHeaders({
       Authorization: `Bearer ${token}`
@@ -105,8 +95,10 @@ export class AuthService {
   private saveSession(response: any): void {
     localStorage.clear();
 
-    if (response.access_token) {
-      localStorage.setItem('token', response.access_token);
+    const token = response.access_token || response.token;
+
+    if (token) {
+      localStorage.setItem('token', token);
     }
 
     if (response.user) {
@@ -117,4 +109,3 @@ export class AuthService {
     }
   }
 }
-
