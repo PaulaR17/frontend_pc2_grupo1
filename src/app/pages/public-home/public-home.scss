@@ -298,7 +298,7 @@ $shadow-google: 0 2px 4px rgba(0,0,0,0.2), 0 -1px 0 rgba(0,0,0,0.02);
     border: none;
   }
 
-  .home-notification {
+ .home-notification {
   margin-top: 10px;
   padding: 10px 12px;
   border-radius: 12px;
@@ -323,24 +323,56 @@ $shadow-google: 0 2px 4px rgba(0,0,0,0.2), 0 -1px 0 rgba(0,0,0,0.02);
 
 .quota-info {
   margin-top: 10px;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: #2b4735;
   font-weight: 600;
 }
 
-.suggestions-list li div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+.suggestions-list {
+  max-height: 280px;
+  overflow-y: auto;
 }
 
-.suggestions-list li small {
-  font-size: 0.75rem;
-  color: #6b7280;
-  line-height: 1.2;
+.suggestion-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 8px;
+  cursor: pointer;
+}
+
+.suggestion-item:hover {
+  background: #f1f8f4;
+}
+
+.suggestion-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.suggestion-content strong {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.suggestion-content small {
+  display: block;
+  color: #647067;
+  font-size: 0.78rem;
+}
+
+.suggestion-item {
+  border-bottom: 1px solid #eef2ee;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
 }
 
 .suggestion-title {
+  padding: 10px 8px;
   font-weight: 700;
   color: #1c3b2a;
   cursor: default;

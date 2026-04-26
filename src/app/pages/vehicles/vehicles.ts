@@ -3,11 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth';
-
-export type FuelType = 'electric' | 'hybrid' | 'gasoline' | 'diesel';
+import { BackendVehicle, FuelType, VehiclePayload, VehicleService } from '../../core/services/vehicle';
 
 export interface Vehicle {
-  id: string;
+  id: number;
   brand: string;
   model: string;
   year: number;
@@ -15,6 +14,7 @@ export interface Vehicle {
   fuelType: FuelType;
   colorHex: string;
   colorName: string;
+  isDefault: boolean;
   menuOpen?: boolean;
 }
 
@@ -26,6 +26,7 @@ interface VehicleForm {
   fuelType: FuelType;
   colorHex: string;
   colorName: string;
+  isDefault: boolean;
 }
 
 @Component({
@@ -37,10 +38,11 @@ interface VehicleForm {
 })
 export class VehiclesComponent implements OnInit {
   private authService = inject(AuthService);
+  private vehicleService = inject(VehicleService);
   private router = inject(Router);
 
-  searchCount: number = 0;          // ← agregar
-  savedRoutes: any[] = [];          // ← agregar (o un tipo más específico)
+  searchCount = 0;
+  savedRoutes: any[] = [];
 
   user: any = null;
   userInitials = '';
@@ -50,10 +52,15 @@ export class VehiclesComponent implements OnInit {
 
   vehicles: Vehicle[] = [];
   activeFilter: 'all' | FuelType = 'all';
+
   showModal = false;
   editingVehicle: Vehicle | null = null;
-
   form: VehicleForm = this.emptyForm();
+
+  loading = false;
+  saving = false;
+  notificationMessage = '';
+  notificationType: 'success' | 'error' | 'warning' | '' = '';
 
   readonly fuelOptions: { value: FuelType; label: string; icon: string }[] = [
     {
@@ -92,48 +99,14 @@ export class VehiclesComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.authService.getUser(1).subscribe({
-      next: (res: any) => {
-        this.user = res;
-        this.userInitials = this.buildInitials(res.name);
-        this.ecoScore = res.eco_score ?? Math.floor(Math.random() * 40) + 60;
-      }
-    });
-
-    const stored = localStorage.getItem('user_vehicles');
-    if (stored) {
-      this.vehicles = JSON.parse(stored);
-    } else {
-      // Demo vehicles so the page looks populated
-      this.vehicles = [
-        {
-          id: crypto.randomUUID(),
-          brand: 'Toyota',
-          model: 'Yaris',
-          year: 2021,
-          plate: '1234 ABC',
-          fuelType: 'hybrid',
-          colorHex: '#c0392b',
-          colorName: 'Rojo pasión'
-        },
-        {
-          id: crypto.randomUUID(),
-          brand: 'Tesla',
-          model: 'Model 3',
-          year: 2023,
-          plate: '5678 XYZ',
-          fuelType: 'electric',
-          colorHex: '#1a1a2e',
-          colorName: 'Negro noche'
-        }
-      ];
-      this.persist();
-    }
+    this.loadCurrentUser();
   }
 
-  // ─── Computed ────────────────────────────────────────────
   get filteredVehicles(): Vehicle[] {
-    if (this.activeFilter === 'all') return this.vehicles;
+    if (this.activeFilter === 'all') {
+      return this.vehicles;
+    }
+
     return this.vehicles.filter(v => v.fuelType === this.activeFilter);
   }
 
@@ -141,12 +114,10 @@ export class VehiclesComponent implements OnInit {
     return this.vehicles.filter(v => v.fuelType === 'electric' || v.fuelType === 'hybrid').length;
   }
 
-  // ─── Filter ──────────────────────────────────────────────
   setFilter(f: 'all' | FuelType): void {
     this.activeFilter = f;
   }
 
-  // ─── Fuel label helper ───────────────────────────────────
   fuelLabel(f: FuelType): string {
     const map: Record<FuelType, string> = {
       electric: 'Eléctrico',
@@ -154,12 +125,13 @@ export class VehiclesComponent implements OnInit {
       gasoline: 'Gasolina',
       diesel: 'Diésel'
     };
+
     return map[f] ?? f;
   }
 
-  // ─── Card context menu ───────────────────────────────────
   toggleCardMenu(v: Vehicle, event: Event): void {
     event.stopPropagation();
+
     const wasOpen = v.menuOpen;
     this.closeAllMenus();
     v.menuOpen = !wasOpen;
@@ -170,73 +142,137 @@ export class VehiclesComponent implements OnInit {
     this.userMenuOpen = false;
   }
 
-  // ─── CRUD ────────────────────────────────────────────────
   openAddModal(event?: Event): void {
     event?.stopPropagation();
+
     this.editingVehicle = null;
     this.form = this.emptyForm();
     this.showModal = true;
+    this.notificationMessage = '';
   }
 
   editVehicle(v: Vehicle): void {
     this.editingVehicle = v;
-    this.form = { ...v };
+
+    this.form = {
+      brand: v.brand,
+      model: v.model,
+      year: v.year,
+      plate: v.plate,
+      fuelType: v.fuelType,
+      colorHex: v.colorHex,
+      colorName: v.colorName,
+      isDefault: v.isDefault
+    };
+
     this.showModal = true;
     v.menuOpen = false;
+    this.notificationMessage = '';
   }
 
   saveVehicle(): void {
-    if (!this.form.brand.trim() || !this.form.model.trim()) return;
-
-    if (this.editingVehicle) {
-      Object.assign(this.editingVehicle, this.form);
-    } else {
-      this.vehicles.unshift({
-        id: crypto.randomUUID(),
-        ...this.form
-      });
-    }
-
-    this.persist();
-    this.closeModal();
+  if (!this.user?.id) {
+    this.showNotification('No se ha podido identificar el usuario.', 'error');
+    return;
   }
 
+  if (!this.validateForm()) {
+    return;
+  }
+
+  const payload = this.buildPayloadFromForm();
+  this.saving = true;
+
+  if (this.editingVehicle) {
+    const editingId = this.editingVehicle.id;
+
+    this.vehicleService.updateVehicle(this.user.id, editingId, payload).subscribe({
+      next: () => {
+        this.saving = false;
+        this.showModal = false;
+        this.editingVehicle = null;
+        this.loadVehicles();
+        this.showNotification('Vehículo actualizado correctamente.', 'success');
+      },
+      error: (err: any) => {
+        this.saving = false;
+        this.showNotification('No se pudo actualizar el vehículo.', 'error');
+        console.error('Error actualizando vehículo:', err);
+      }
+    });
+
+    return;
+  }
+
+  this.vehicleService.createVehicle(this.user.id, payload).subscribe({
+    next: () => {
+      this.saving = false;
+      this.showModal = false;
+      this.editingVehicle = null;
+      this.form = this.emptyForm();
+      this.loadVehicles();
+      this.showNotification('Vehículo añadido correctamente.', 'success');
+    },
+    error: (err: any) => {
+      this.saving = false;
+      this.showNotification('No se pudo crear el vehículo.', 'error');
+      console.error('Error creando vehículo:', err);
+    }
+  });
+}
+
   deleteVehicle(v: Vehicle): void {
-    this.vehicles = this.vehicles.filter(x => x.id !== v.id);
-    this.persist();
+    if (!this.user?.id) {
+      this.showNotification('No se ha podido identificar el usuario.', 'error');
+      return;
+    }
+
+    const confirmed = confirm(`¿Seguro que quieres eliminar ${v.brand} ${v.model}?`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.vehicleService.deleteVehicle(this.user.id, v.id).subscribe({
+      next: () => {
+        this.loadVehicles();
+        this.showNotification('Vehículo eliminado correctamente.', 'success');
+      },
+      error: (err: any) => {
+        this.showNotification('No se pudo eliminar el vehículo.', 'error');
+        console.error('Error eliminando vehículo:', err);
+      }
+    });
+  }
+
+  setDefaultVehicle(v: Vehicle): void {
+    if (!this.user?.id) {
+      this.showNotification('No se ha podido identificar el usuario.', 'error');
+      return;
+    }
+
+    this.vehicleService.setDefault(this.user.id, v.id).subscribe({
+      next: () => {
+        this.loadVehicles();
+        this.showNotification('Vehículo marcado como predeterminado.', 'success');
+      },
+      error: (err: any) => {
+        this.showNotification('No se pudo marcar como predeterminado.', 'error');
+        console.error('Error marcando vehículo por defecto:', err);
+      }
+    });
   }
 
   closeModal(): void {
-    this.showModal = false;
-    this.editingVehicle = null;
+  if (this.saving) {
+    return;
   }
 
-  // ─── Helpers ─────────────────────────────────────────────
-  private emptyForm(): VehicleForm {
-    return {
-      brand: '',
-      model: '',
-      year: new Date().getFullYear(),
-      plate: '',
-      fuelType: 'gasoline',
-      colorHex: '#1a1a2e',
-      colorName: 'Negro noche'
-    };
-  }
+  this.showModal = false;
+  this.editingVehicle = null;
+  this.form = this.emptyForm();
+}
 
-  private persist(): void {
-    localStorage.setItem('user_vehicles', JSON.stringify(this.vehicles));
-  }
-
-  private buildInitials(name: string): string {
-    if (!name) return '?';
-    const parts = name.trim().split(' ');
-    return parts.length >= 2
-      ? (parts[0][0] + parts[1][0]).toUpperCase()
-      : parts[0][0].toUpperCase();
-  }
-
-  // ─── Nav helpers ─────────────────────────────────────────
   toggleSidebar(): void {
     this.sidebarOpen = !this.sidebarOpen;
   }
@@ -250,12 +286,151 @@ export class VehiclesComponent implements OnInit {
     this.router.navigate(['/login']);
   }
 
+  private loadCurrentUser(): void {
+    const userId = this.authService.getCurrentUserId?.() ?? Number(localStorage.getItem('user_id'));
+
+    if (!userId) {
+      this.showNotification('Sesión no válida. Vuelve a iniciar sesión.', 'error');
+      this.router.navigate(['/login']);
+      return;
+    }
+
+    this.loading = true;
+
+    this.authService.getUser(userId).subscribe({
+      next: (res: any) => {
+        this.user = res;
+        this.userInitials = this.buildInitials(res.name);
+        this.ecoScore = res.eco_score ?? 0;
+
+        this.loadVehicles();
+      },
+      error: (err: any) => {
+        this.loading = false;
+        this.showNotification('No se pudo cargar el usuario.', 'error');
+        console.error('Error cargando usuario:', err);
+      }
+    });
+  }
+
+  private loadVehicles(): void {
+    if (!this.user?.id) {
+      return;
+    }
+
+    this.loading = true;
+
+    this.vehicleService.getVehicles(this.user.id).subscribe({
+      next: (res: BackendVehicle[]) => {
+        this.vehicles = res.map(vehicle => this.mapBackendVehicle(vehicle));
+        this.loading = false;
+      },
+      error: (err: any) => {
+        this.loading = false;
+        this.showNotification('No se pudieron cargar los vehículos.', 'error');
+        console.error('Error cargando vehículos:', err);
+      }
+    });
+  }
+
+  private mapBackendVehicle(vehicle: BackendVehicle): Vehicle {
+    const fallbackName = vehicle.nickname || 'Vehículo';
+    const fallbackParts = fallbackName.split(' ');
+
+    return {
+      id: vehicle.id,
+      brand: vehicle.brand || fallbackParts[0] || 'Marca',
+      model: vehicle.model || fallbackParts.slice(1).join(' ') || 'Modelo',
+      year: vehicle.year || new Date().getFullYear(),
+      plate: vehicle.plate || '',
+      fuelType: vehicle.fuel_type || (vehicle.is_electric ? 'electric' : 'gasoline'),
+      colorHex: vehicle.color_hex || '#1a1a2e',
+      colorName: vehicle.color_name || 'Negro noche',
+      isDefault: vehicle.is_default,
+      menuOpen: false
+    };
+  }
+
+  private buildPayloadFromForm(): VehiclePayload {
+    return {
+      type: 'CAR',
+      nickname: `${this.form.brand.trim()} ${this.form.model.trim()}`,
+      brand: this.form.brand.trim(),
+      model: this.form.model.trim(),
+      year: this.form.year,
+      plate: this.form.plate.trim() || null,
+      fuel_type: this.form.fuelType,
+      color_hex: this.form.colorHex,
+      color_name: this.form.colorName,
+      is_electric: this.form.fuelType === 'electric' || this.form.fuelType === 'hybrid',
+      is_default: this.form.isDefault
+    };
+  }
+
+  private validateForm(): boolean {
+    if (!this.form.brand.trim()) {
+      this.showNotification('La marca es obligatoria.', 'warning');
+      return false;
+    }
+
+    if (!this.form.model.trim()) {
+      this.showNotification('El modelo es obligatorio.', 'warning');
+      return false;
+    }
+
+    const currentYear = new Date().getFullYear() + 1;
+
+    if (this.form.year < 1990 || this.form.year > currentYear) {
+      this.showNotification(`El año debe estar entre 1990 y ${currentYear}.`, 'warning');
+      return false;
+    }
+
+    return true;
+  }
+
+  private emptyForm(): VehicleForm {
+    return {
+      brand: '',
+      model: '',
+      year: new Date().getFullYear(),
+      plate: '',
+      fuelType: 'gasoline',
+      colorHex: '#1a1a2e',
+      colorName: 'Negro noche',
+      isDefault: false
+    };
+  }
+
+  private buildInitials(name: string): string {
+    if (!name) {
+      return '?';
+    }
+
+    const parts = name.trim().split(' ');
+
+    return parts.length >= 2
+      ? (parts[0][0] + parts[1][0]).toUpperCase()
+      : parts[0][0].toUpperCase();
+  }
+
+  private showNotification(message: string, type: 'success' | 'error' | 'warning'): void {
+    this.notificationMessage = message;
+    this.notificationType = type;
+
+    setTimeout(() => {
+      this.notificationMessage = '';
+      this.notificationType = '';
+    }, 4500);
+  }
+
   @HostListener('document:click', ['$event'])
   clickOut(event: Event): void {
     const target = event.target as HTMLElement;
+
     if (!target.closest('.nav-actions')) {
       this.userMenuOpen = false;
     }
+
     if (!target.closest('.vehicle-card')) {
       this.vehicles.forEach(v => (v.menuOpen = false));
     }

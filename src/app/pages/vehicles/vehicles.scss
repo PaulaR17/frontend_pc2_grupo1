@@ -746,4 +746,63 @@ $border-light:  #dadce0;
       cursor: not-allowed;
     }
   }
+
+  .vehicles-notification {
+  position: absolute;
+  top: 18px;
+  right: 24px;
+  z-index: 50;
+  padding: 12px 18px;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.vehicles-notification.success {
+  background: #d8f8e5;
+  color: #146c35;
+}
+
+.vehicles-notification.error {
+  background: #fde2e2;
+  color: #9b1c1c;
+}
+
+.vehicles-notification.warning {
+  background: #fff4d6;
+  color: #8a5a00;
+}
+
+.vehicles-loading {
+  position: absolute;
+  top: 18px;
+  left: 24px;
+  z-index: 50;
+  padding: 10px 16px;
+  background: white;
+  color: #1c3b2a;
+  border-radius: 12px;
+  font-weight: 700;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.default-tag {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.default-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  color: #1c3b2a;
+  cursor: pointer;
+}
+
+.default-checkbox input {
+  width: 18px;
+  height: 18px;
+}
 }

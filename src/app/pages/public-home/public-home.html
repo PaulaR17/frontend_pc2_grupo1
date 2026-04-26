@@ -17,7 +17,7 @@
             type="text"
             [(ngModel)]="searchQuery"
             (input)="onSearchInput()"
-            (focus)="mostrarSugerencias = true"
+            (focus)="onSearchFocus()"
             (keyup.enter)="onSearch()"
             placeholder="Busca una zona en Madrid...">
 
@@ -40,36 +40,24 @@
         </div>
 
         <ul class="suggestions-list" *ngIf="mostrarSugerencias">
-          <li *ngIf="loadingSuggestions">
+          <li *ngIf="loadingSuggestions" class="suggestion-title">
             Buscando ubicaciones...
           </li>
 
           <li
             *ngFor="let suggestion of locationSuggestions"
-            (click)="selectSuggestion(suggestion)">
+            (click)="selectSuggestion(suggestion)"
+            class="suggestion-item">
             <img src="assets/Icons/pin-icon.png" class="pin-icon-img" alt="Ubicación">
-            <div>
-              <strong>{{ suggestion.name || suggestion.text }}</strong>
-              <small>{{ suggestion.text }}</small>
+
+            <div class="suggestion-content">
+              <strong>{{ getSuggestionTitle(suggestion) }}</strong>
+            <small>{{ getSuggestionSubtitle(suggestion) }}</small>
             </div>
           </li>
 
           <li
-            *ngIf="!loadingSuggestions && locationSuggestions.length === 0 && searchQuery.trim().length < 2"
-            class="suggestion-title">
-            Zonas populares
-          </li>
-
-          <li
-            *ngFor="let zona of zonasDisponibles"
-            (click)="seleccionarZona(zona)"
-            [hidden]="searchQuery.trim().length >= 2">
-            <img src="assets/Icons/pin-icon.png" class="pin-icon-img" alt="Zona">
-            Zona {{ zona }}
-          </li>
-
-          <li
-            *ngIf="!loadingSuggestions && locationSuggestions.length === 0 && searchQuery.trim().length >= 2"
+            *ngIf="!loadingSuggestions && locationSuggestions.length === 0"
             class="suggestion-title">
             No hay sugerencias disponibles
           </li>
@@ -102,7 +90,7 @@
           <div class="modal-actions">
             <button class="btn-filled" routerLink="/register">Registrarse gratis</button>
             <button class="btn-outline" routerLink="/login">Iniciar sesión</button>
-            <button class="btn-close" (click)="showLimitModal = false">Cerrar</button>
+            <button class="btn-close" (click)="showLimitModal = false"></button>
           </div>
         </div>
       </div>

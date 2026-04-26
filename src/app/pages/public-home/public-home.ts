@@ -34,14 +34,6 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
   notificationMessage = '';
   notificationType: 'success' | 'error' | 'warning' | '' = '';
 
-  zonasDisponibles: string[] = [
-    'Centro', 'Arganzuela', 'Retiro', 'Salamanca', 'Chamartín',
-    'Tetuán', 'Chamberí', 'Fuencarral-El Pardo', 'Moncloa-Aravaca',
-    'Latina', 'Carabanchel', 'Usera', 'Puente de Vallecas',
-    'Moratalaz', 'Ciudad Lineal', 'Hortaleza', 'Villaverde',
-    'Villa de Vallecas', 'Vicálvaro', 'San Blas-Canillejas', 'Barajas'
-  ];
-
   private map!: L.Map;
   private zoneLayer: L.LayerGroup = L.layerGroup();
   private searchTimer: any = null;
@@ -103,7 +95,6 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
     });
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
-
     this.zoneLayer.addTo(this.map);
   }
 
@@ -117,15 +108,17 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
       clearTimeout(this.searchTimer);
     }
 
-    if (query.length < 2) {
-      this.locationSuggestions = [];
-      this.mostrarSugerencias = true;
-      return;
-    }
-
     this.searchTimer = setTimeout(() => {
       this.loadSuggestions(query);
-    }, 350);
+    }, 250);
+  }
+
+  onSearchFocus(): void {
+    this.mostrarSugerencias = true;
+
+    if (this.locationSuggestions.length === 0) {
+      this.loadSuggestions(this.searchQuery.trim());
+    }
   }
 
   private loadSuggestions(query: string): void {
@@ -136,10 +129,6 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
       next: (res: any) => {
         this.locationSuggestions = res.results ?? [];
         this.loadingSuggestions = false;
-
-        if (this.locationSuggestions.length === 0) {
-          this.showNotification('No se encontraron ubicaciones para esa búsqueda.', 'warning');
-        }
       },
       error: (err: any) => {
         this.locationSuggestions = [];
@@ -174,7 +163,10 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
     }
 
     if (this.locationSuggestions.length > 0) {
-      this.selectSuggestion(this.locationSuggestions[0]);
+      this.selectedLocation = this.locationSuggestions[0];
+      this.searchQuery = this.selectedLocation.text;
+      this.mostrarSugerencias = false;
+      this.calculateRouteTo(this.selectedLocation);
       return;
     }
 
@@ -187,7 +179,9 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
           return;
         }
 
-        this.selectSuggestion(firstSuggestion);
+        this.selectedLocation = firstSuggestion;
+        this.searchQuery = firstSuggestion.text;
+        this.calculateRouteTo(firstSuggestion);
       },
       error: (err: any) => {
         this.showNotification('Error buscando la ubicación.', 'error');
@@ -202,13 +196,7 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
     this.locationSuggestions = [];
     this.mostrarSugerencias = false;
 
-    this.calculateRouteTo(suggestion);
-  }
-
-  seleccionarZona(zona: string): void {
-    this.searchQuery = zona;
-    this.selectedLocation = null;
-    this.onSearchInput();
+    this.previewLocationOnMap(suggestion);
   }
 
   private calculateRouteTo(destination: LocationSuggestion): void {
@@ -233,7 +221,6 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
         this.maxSearches = routeRes.max ?? this.maxSearches;
 
         this.displayLocationOnMap(destination, routeRes.summary);
-
         this.showNotification('Ruta calculada correctamente.', 'success');
       },
       error: (err: any) => {
@@ -250,6 +237,17 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
         console.error('Error calculando ruta:', err);
       }
     });
+  }
+
+  private previewLocationOnMap(location: LocationSuggestion): void {
+    this.zoneLayer.clearLayers();
+
+    this.map.flyTo([location.lat, location.lon], 14);
+
+    L.marker([location.lat, location.lon])
+      .addTo(this.zoneLayer)
+      .bindPopup(`<b>${location.text}</b><br>Pulsa el botón verde para calcular la ruta.`)
+      .openPopup();
   }
 
   private displayLocationOnMap(location: LocationSuggestion, summary: any): void {
@@ -271,6 +269,20 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
       .bindPopup(popupLines.join('<br>'))
       .openPopup();
   }
+
+  getSuggestionTitle(suggestion: LocationSuggestion): string {
+  return suggestion.name || suggestion.text;
+}
+
+getSuggestionSubtitle(suggestion: LocationSuggestion): string {
+  const title = this.getSuggestionTitle(suggestion);
+
+  if (!suggestion.text || suggestion.text === title) {
+    return 'Madrid, España';
+  }
+
+  return suggestion.text.replace(title, '').replace(/^,\s*/, '').trim();
+}
 
   private showNotification(message: string, type: 'success' | 'error' | 'warning'): void {
     this.notificationMessage = message;
