@@ -35,6 +35,8 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
   ecoScore = 0;
   searchQuery = '';
   mostrarSugerencias = false;
+
+  activeSection = 'inicio';
   activeTab: 'inicio' | 'rutas' | 'ayuda' | 'vehiculos' | 'mascota' = 'inicio';
 
   savedRoutes: SavedRoute[] = [];
@@ -51,26 +53,28 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
   private zoneLayer: L.LayerGroup = L.layerGroup();
 
   ngOnInit(): void {
-  const id = localStorage.getItem('user_id');
-  console.log("ID cargado en Home:", id);
-  
-  if (id) {
-    this.authService.getUser(Number(id)).subscribe({
-      next: (res: any) => {
-        this.user = res;
-        this.userInitials = this.buildInitials(res.name);
-        this.ecoScore = res.eco_score ?? Math.floor(Math.random() * 40) + 60;
-        console.log("Usuario cargado con éxito:", this.user.name);
-      },
-      error: (err) => {
-        console.error("Error cargando usuario:", err);
-        this.logout(); 
-      }
-    });
-  } else {
-    this.logout();
+    const id = localStorage.getItem('user_id');
+
+    if (id) {
+      this.authService.getUser(Number(id)).subscribe({
+        next: (res: any) => {
+          this.user = res;
+          this.userInitials = this.buildInitials(res.name);
+          this.ecoScore = res.eco_score ?? Math.floor(Math.random() * 40) + 60;
+        },
+        error: () => {
+          this.logout();
+        }
+      });
+    } else {
+      this.logout();
+    }
+
+    const storedRoutes = localStorage.getItem('saved_routes');
+    if (storedRoutes) {
+      this.savedRoutes = JSON.parse(storedRoutes);
+    }
   }
-}
 
   ngAfterViewInit(): void {
     this.initMap();
@@ -78,7 +82,9 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
 
   private buildInitials(name: string): string {
     if (!name) return '?';
+
     const parts = name.trim().split(' ');
+
     return parts.length >= 2
       ? (parts[0][0] + parts[1][0]).toUpperCase()
       : parts[0][0].toUpperCase();
@@ -97,13 +103,20 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
 
   onSearch(): void {
     const query = this.searchQuery.trim();
-    if (query === '') return;
+
+    if (query === '') {
+      return;
+    }
+
     this.mostrarSugerencias = false;
 
     this.dataService.searchLocation(query).subscribe({
       next: (searchRes: any) => {
         const destination = searchRes.results?.[0];
-        if (!destination) return;
+
+        if (!destination) {
+          return;
+        }
 
         this.searchCount++;
 
@@ -124,7 +137,9 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
           text: destination.text
         });
       },
-      error: (err: any) => console.error('Error buscando ubicación:', err)
+      error: () => {
+        alert('No se ha podido buscar la ubicación.');
+      }
     });
   }
 
@@ -149,6 +164,7 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
       longitude: route.lng,
       text: route.name
     });
+
     this.activeTab = 'inicio';
   }
 
@@ -156,6 +172,20 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
     this.searchQuery = zona;
     this.mostrarSugerencias = false;
     this.onSearch();
+  }
+
+  goToVehicles(): void {
+    this.activeSection = 'vehiculos';
+    this.activeTab = 'vehiculos';
+    this.router.navigate(['/vehicles']);
+  }
+
+  goToProfile(): void {
+    this.router.navigate(['/profile']);
+  }
+
+  goToDashboard(): void {
+    this.router.navigate(['/dashboard']);
   }
 
   toggleSidebar(): void {
@@ -168,15 +198,16 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
 
   logout(): void {
     this.authService.logout();
-    this.router.navigate(['/login']);
   }
 
   @HostListener('document:click', ['$event'])
   clickOut(event: Event): void {
     const target = event.target as HTMLElement;
+
     if (!target.closest('.search-wrapper')) {
       this.mostrarSugerencias = false;
     }
+
     if (!target.closest('.nav-actions')) {
       this.userMenuOpen = false;
     }

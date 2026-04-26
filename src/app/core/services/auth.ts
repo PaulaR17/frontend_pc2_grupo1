@@ -108,4 +108,9 @@ export class AuthService {
       localStorage.setItem('user_role', response.user.rol ?? 'USER');
     }
   }
+  getAdminDashboard(): Observable<any> {
+  return this.http.get<any>(`${this.apiUrl}/admin/dashboard`, {
+    headers: this.getAuthHeaders()
+  });
+}
 }
