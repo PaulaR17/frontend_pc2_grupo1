@@ -36,7 +36,7 @@ $shadow-google: 0 2px 4px rgba(0,0,0,0.2), 0 -1px 0 rgba(0,0,0,0.02);
 
 .btn-navbar {
   padding: 10px 22px;
-  border-radius: 25px; /* Botones redondeados */
+  border-radius: 25px; 
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -61,7 +61,7 @@ $shadow-google: 0 2px 4px rgba(0,0,0,0.2), 0 -1px 0 rgba(0,0,0,0.02);
 .dashboard-container {
   flex: 1;
   display: grid;
-  grid-template-columns: 400px 1fr; // Invertido: Panel 400px, Mapa el resto
+  grid-template-columns: 400px 1fr; 
   overflow: hidden;
 }
 
@@ -82,7 +82,7 @@ $shadow-google: 0 2px 4px rgba(0,0,0,0.2), 0 -1px 0 rgba(0,0,0,0.02);
       display: flex;
       align-items: center;
       padding: 0 12px;
-      border-radius: 24px; // Estilo cápsula Google
+      border-radius: 24px; 
       border: 1px solid $border-light;
       box-shadow: 0 1px 2px rgba(60,64,67,0.3);
 
@@ -109,7 +109,7 @@ $shadow-google: 0 2px 4px rgba(0,0,0,0.2), 0 -1px 0 rgba(0,0,0,0.02);
       transition: 0.2s;
 
       &.active {
-        background: #2a3d2f; // Tu color verde oscuro
+        background: #2a3d2f; 
         color: $white;
       }
       
@@ -170,12 +170,12 @@ $shadow-google: 0 2px 4px rgba(0,0,0,0.2), 0 -1px 0 rgba(0,0,0,0.02);
 
 #map {
   width: 100%;
-  height: 100%; // Ocupará todo el viewport definido en el dashboard-container
+  height: 100%; 
   z-index: 1;
-  background-color: #e5e3df; // Color de fondo mientras cargan los tiles
+  background-color: #e5e3df; 
 }
 
-/* El modal de aviso */
+
 .limit-overlay {
   position: absolute;
   top: 0; left: 0;
@@ -218,7 +218,7 @@ $shadow-google: 0 2px 4px rgba(0,0,0,0.2), 0 -1px 0 rgba(0,0,0,0.02);
   font-weight: 500;
   
   &.active {
-    background-color: #2d3e33; // El verde oscuro de tu logo
+    background-color: #2d3e33; 
     color: white;
     border: none;
   }
@@ -266,19 +266,19 @@ $shadow-google: 0 2px 4px rgba(0,0,0,0.2), 0 -1px 0 rgba(0,0,0,0.02);
 
 .mascota-container {
   width: 100%;
-  height: 220px; /* Altura fija para que no deforme el sidebar */
-  background-color: #ffffff00; /* Verde oscuro ECOTRAFFIC */
-  border-radius: 15px; /* Bordes redondeados */
+  height: 220px; 
+  background-color: #ffffff00; 
+  border-radius: 15px; 
   display: flex;
-  align-items: center; /* Centrado vertical */
-  justify-content: center; /* Centrado horizontal */
-  overflow: hidden; /* Corta lo que sobresalga */
+  align-items: center; 
+  justify-content: center; 
+  overflow: hidden; 
   padding: 10px;
 
   img {
     max-width: 90%;
     max-height: 90%;
-    object-fit: contain; /* Asegura que la imagen no se estire */
+    object-fit: contain; 
   }
 }
 
@@ -293,8 +293,69 @@ $shadow-google: 0 2px 4px rgba(0,0,0,0.2), 0 -1px 0 rgba(0,0,0,0.02);
   cursor: pointer;
 
   &.active {
-    background-color: #2D3E33; /* Color verde oscuro original */
+    background-color: #2D3E33; 
     color: white;
     border: none;
   }
+
+  .home-notification {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.home-notification.success {
+  background: #d8f8e5;
+  color: #146c35;
+}
+
+.home-notification.error {
+  background: #fde2e2;
+  color: #9b1c1c;
+}
+
+.home-notification.warning {
+  background: #fff4d6;
+  color: #8a5a00;
+}
+
+.quota-info {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: #2b4735;
+  font-weight: 600;
+}
+
+.suggestions-list li div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.suggestions-list li small {
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.2;
+}
+
+.suggestion-title {
+  font-weight: 700;
+  color: #1c3b2a;
+  cursor: default;
+}
+
+.route-loading {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  background: white;
+  color: #1c3b2a;
+  padding: 12px 18px;
+  border-radius: 16px;
+  font-weight: 700;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 1000;
+}
 }

@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { AuthService } from '../../core/services/auth';
 
 @Component({
   selector: 'app-register',
@@ -11,29 +12,73 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
   styleUrls: ['./register.scss']
 })
 export class RegisterComponent {
+  private fb = inject(FormBuilder);
+  private router = inject(Router);
+  private authService = inject(AuthService);
+
   registerForm: FormGroup;
+  errorMessage = '';
+  successMessage = '';
+  loading = false;
 
-  constructor(private fb: FormBuilder, private router: Router) {
+  constructor() {
     this.registerForm = this.fb.group({
-      nombre: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]], // Validación de email
-      password: ['', [Validators.required, Validators.minLength(8)]], // Mínimo 8 caracteres
+      nombre: ['', [Validators.required, Validators.maxLength(100)]],
+      email: ['', [Validators.required, Validators.email, Validators.maxLength(100)]],
+      password: ['', [Validators.required, Validators.minLength(8)]],
       confirmPassword: ['', Validators.required]
-    }, { validator: this.passwordMatchValidator });
+    }, { validators: this.passwordMatchValidator });
   }
 
-  // Detectar si las contraseñas coinciden
-  passwordMatchValidator(g: FormGroup) {
-    return g.get('password')?.value === g.get('confirmPassword')?.value
-      ? null : { 'mismatch': true };
-  }
+  passwordMatchValidator(form: FormGroup) {
+    const password = form.get('password')?.value;
+    const confirmPassword = form.get('confirmPassword')?.value;
 
-  onSubmit() {
-    if (this.registerForm.valid) {
-      console.log('Datos de registro:', this.registerForm.value);
-      // Aquí conectarías con tu servicio de Laravel
-    } else {
-      this.registerForm.markAllAsTouched(); // Muestra los errores
+    if (password === confirmPassword) {
+      return null;
     }
+
+    return { mismatch: true };
+  }
+
+  onSubmit(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    if (this.registerForm.invalid) {
+      this.registerForm.markAllAsTouched();
+      this.errorMessage = 'Revisa los campos del formulario.';
+      return;
+    }
+
+    const formValue = this.registerForm.value;
+
+    const payload = {
+      name: formValue.nombre,
+      mail: formValue.email,
+      password: formValue.password,
+      password_confirmation: formValue.confirmPassword
+    };
+
+    this.loading = true;
+
+    this.authService.register(payload).subscribe({
+      next: () => {
+        this.loading = false;
+        this.successMessage = 'Cuenta creada correctamente.';
+        this.router.navigate(['/user-home']);
+      },
+      error: (err: any) => {
+        this.loading = false;
+
+        if (err.status === 422) {
+          this.errorMessage = 'El email ya existe o hay algún dato incorrecto.';
+          return;
+        }
+
+        this.errorMessage = 'No se pudo crear la cuenta. Revisa el backend.';
+        console.error('Error registrando usuario:', err);
+      }
+    });
   }
 }

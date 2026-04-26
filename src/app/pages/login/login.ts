@@ -21,19 +21,40 @@ export class LoginComponent {
   };
 
   errorMessage = '';
+  successMessage = '';
+  loading = false;
 
   onLogin(): void {
-    if (this.loginData.mail === '' || this.loginData.password === '') {
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    if (this.loginData.mail.trim() === '' || this.loginData.password.trim() === '') {
       this.errorMessage = 'Rellena el email y la contraseña.';
       return;
     }
 
+    this.loading = true;
+
     this.authService.login(this.loginData).subscribe({
       next: () => {
-        this.router.navigate(['/dashboard']);
+        this.loading = false;
+        this.successMessage = 'Inicio de sesión correcto.';
+        this.router.navigate(['/user-home']);
       },
       error: (err: any) => {
-        this.errorMessage = 'Credenciales incorrectas.';
+        this.loading = false;
+
+        if (err.status === 422 || err.status === 401) {
+          this.errorMessage = 'Credenciales incorrectas.';
+          return;
+        }
+
+        if (err.status === 403) {
+          this.errorMessage = 'Este usuario está desactivado.';
+          return;
+        }
+
+        this.errorMessage = 'No se pudo iniciar sesión. Revisa el backend.';
         console.error('Error de acceso:', err);
       }
     });

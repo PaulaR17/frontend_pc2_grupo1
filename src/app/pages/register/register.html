@@ -8,13 +8,16 @@
       </div>
 
       <form class="register-form" [formGroup]="registerForm" (ngSubmit)="onSubmit()">
-        
+
         <div class="input-field-group">
           <label>Nombre Completo</label>
           <div class="input-wrapper" [class.error]="registerForm.get('nombre')?.invalid && registerForm.get('nombre')?.touched">
             <img src="assets/Icons/icon-user.png" class="field-icon">
             <input type="text" formControlName="nombre" placeholder="Tu nombre completo">
           </div>
+          <small class="error-text" *ngIf="registerForm.get('nombre')?.errors?.['required'] && registerForm.get('nombre')?.touched">
+            El nombre es obligatorio.
+          </small>
         </div>
 
         <div class="input-field-group">
@@ -23,6 +26,9 @@
             <img src="assets/Icons/icon-mail.png" class="field-icon">
             <input type="email" formControlName="email" placeholder="tu@email.com">
           </div>
+          <small class="error-text" *ngIf="registerForm.get('email')?.errors?.['required'] && registerForm.get('email')?.touched">
+            El email es obligatorio.
+          </small>
           <small class="error-text" *ngIf="registerForm.get('email')?.errors?.['email'] && registerForm.get('email')?.touched">
             El correo no es válido.
           </small>
@@ -34,6 +40,9 @@
             <img src="assets/Icons/icon-lock.png" class="field-icon">
             <input type="password" formControlName="password" placeholder="Mínimo 8 caracteres">
           </div>
+          <small class="error-text" *ngIf="registerForm.get('password')?.errors?.['required'] && registerForm.get('password')?.touched">
+            La contraseña es obligatoria.
+          </small>
           <small class="error-text" *ngIf="registerForm.get('password')?.errors?.['minlength'] && registerForm.get('password')?.touched">
             Debe tener al menos 8 caracteres.
           </small>
@@ -50,10 +59,20 @@
           </small>
         </div>
 
-        <button type="submit" class="btn-primary">Register Now</button>
+        <p *ngIf="errorMessage" style="color: #c0392b; font-weight: 600;">
+          {{ errorMessage }}
+        </p>
+
+        <p *ngIf="successMessage" style="color: #1b8f4d; font-weight: 600;">
+          {{ successMessage }}
+        </p>
+
+        <button type="submit" class="btn-primary" [disabled]="loading">
+          {{ loading ? 'Creando cuenta...' : 'Crear Cuenta' }}
+        </button>
 
         <div class="form-footer">
-          <p>¿Ya tienes cuenta? <a routerLink="/login">Inicia sesión aquí</a></p>
+          <p>¿Ya tienes cuenta? <a routerLink="/login">Inicia sesión</a></p>
         </div>
       </form>
     </div>

@@ -17,11 +17,12 @@
           <label>Username or Email</label>
           <div class="input-wrapper">
             <img src="assets/Icons/icon-mail.png" class="field-icon">
-            <input 
-              type="text" 
+            <input
+              type="email"
               name="mail"
               [(ngModel)]="loginData.mail"
-              placeholder="tu@email.com">
+              placeholder="tu@email.com"
+              autocomplete="email">
           </div>
         </div>
 
@@ -29,17 +30,26 @@
           <label>Password</label>
           <div class="input-wrapper">
             <img src="assets/Icons/icon-lock.png" class="field-icon">
-            <input 
-              type="password" 
+            <input
+              type="password"
               name="password"
               [(ngModel)]="loginData.password"
-              placeholder="********">
+              placeholder="********"
+              autocomplete="current-password">
           </div>
         </div>
 
-        <p *ngIf="errorMessage" style="color: red;">{{ errorMessage }}</p>
+        <p *ngIf="errorMessage" style="color: #c0392b; font-weight: 600;">
+          {{ errorMessage }}
+        </p>
 
-        <button type="submit" class="btn-primary">Log In</button>
+        <p *ngIf="successMessage" style="color: #1b8f4d; font-weight: 600;">
+          {{ successMessage }}
+        </p>
+
+        <button type="submit" class="btn-primary" [disabled]="loading">
+          {{ loading ? 'Entrando...' : 'Log In' }}
+        </button>
 
         <div class="form-footer">
           <a routerLink="/recovery">¿Olvidaste tu contraseña?</a>

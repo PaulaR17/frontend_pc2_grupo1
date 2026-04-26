@@ -2,6 +2,18 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+export interface LocationSuggestion {
+  id?: string | null;
+  text: string;
+  name?: string | null;
+  type?: string | null;
+  district?: string | null;
+  region?: string | null;
+  country?: string | null;
+  lat: number;
+  lon: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -23,7 +35,7 @@ export class PublicDataService {
     );
   }
 
-  calculateGuestRoute(sessionId: string, destination: any): Observable<any> {
+  calculateGuestRoute(sessionId: string, destination: LocationSuggestion): Observable<any> {
     return this.http.post(`${this.apiUrl}/guest/sessions/${sessionId}/routes?include=summary`, {
       origin: {
         lat: 40.4167,

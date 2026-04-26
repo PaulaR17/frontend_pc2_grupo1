@@ -12,32 +12,77 @@
       <div class="search-wrapper">
         <div class="search-card">
           <img src="assets/Icons/search-icon.png" class="search-icon-img" alt="Buscar">
-          
-          <input 
-            type="text" 
-            [(ngModel)]="searchQuery" 
+
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            (input)="onSearchInput()"
             (focus)="mostrarSugerencias = true"
-            (keyup.enter)="onSearch()" 
+            (keyup.enter)="onSearch()"
             placeholder="Busca una zona en Madrid...">
-          
-          <button class="btn-go" (click)="onSearch()">
+
+          <button class="btn-go" (click)="onSearch()" [disabled]="loadingRoute">
             <img src="assets/Icons/go-icon.png" class="go-icon-img" alt="Ir">
           </button>
         </div>
 
+        <div
+          class="home-notification"
+          *ngIf="notificationMessage"
+          [class.success]="notificationType === 'success'"
+          [class.error]="notificationType === 'error'"
+          [class.warning]="notificationType === 'warning'">
+          {{ notificationMessage }}
+        </div>
+
+        <div class="quota-info">
+          Búsquedas restantes: {{ remainingSearches }} / {{ maxSearches }}
+        </div>
+
         <ul class="suggestions-list" *ngIf="mostrarSugerencias">
-          <li *ngFor="let zona of zonasDisponibles" (click)="seleccionarZona(zona)">
+          <li *ngIf="loadingSuggestions">
+            Buscando ubicaciones...
+          </li>
+
+          <li
+            *ngFor="let suggestion of locationSuggestions"
+            (click)="selectSuggestion(suggestion)">
+            <img src="assets/Icons/pin-icon.png" class="pin-icon-img" alt="Ubicación">
+            <div>
+              <strong>{{ suggestion.name || suggestion.text }}</strong>
+              <small>{{ suggestion.text }}</small>
+            </div>
+          </li>
+
+          <li
+            *ngIf="!loadingSuggestions && locationSuggestions.length === 0 && searchQuery.trim().length < 2"
+            class="suggestion-title">
+            Zonas populares
+          </li>
+
+          <li
+            *ngFor="let zona of zonasDisponibles"
+            (click)="seleccionarZona(zona)"
+            [hidden]="searchQuery.trim().length >= 2">
             <img src="assets/Icons/pin-icon.png" class="pin-icon-img" alt="Zona">
-            {{ zona }}
+            Zona {{ zona }}
+          </li>
+
+          <li
+            *ngIf="!loadingSuggestions && locationSuggestions.length === 0 && searchQuery.trim().length >= 2"
+            class="suggestion-title">
+            No hay sugerencias disponibles
           </li>
         </ul>
       </div>
 
       <div class="menu-items">
         <button class="menu-btn active">Inicio</button>
+
         <div class="mascota-container">
           <img src="assets/Pet/NoUserPet.png" alt="Mascota" (error)="$any($event.target).style.display='none'">
         </div>
+
         <button class="menu-btn outline">Ayuda / Dudas</button>
       </div>
     </aside>
@@ -45,10 +90,15 @@
     <main class="map-section">
       <div id="map" class="map-viewport"></div>
 
+      <div class="route-loading" *ngIf="loadingRoute">
+        Calculando ruta...
+      </div>
+
       <div class="limit-overlay" *ngIf="showLimitModal">
         <div class="limit-card">
           <h3>Límite de búsquedas alcanzado</h3>
-          <p>Has realizado {{searchCount}} búsquedas. Para seguir explorando, por favor regístrate.</p>
+          <p>Has realizado {{ searchCount }} búsquedas. Para seguir explorando, por favor regístrate.</p>
+
           <div class="modal-actions">
             <button class="btn-filled" routerLink="/register">Registrarse gratis</button>
             <button class="btn-outline" routerLink="/login">Iniciar sesión</button>
