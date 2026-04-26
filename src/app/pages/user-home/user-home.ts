@@ -36,17 +36,32 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
   searchQuery = '';
   mostrarSugerencias = false;
 
-  activeSection = 'inicio';
   activeTab: 'inicio' | 'rutas' | 'ayuda' | 'vehiculos' | 'mascota' = 'inicio';
 
   savedRoutes: SavedRoute[] = [];
 
   zonasDisponibles: string[] = [
-    'Centro', 'Arganzuela', 'Retiro', 'Salamanca', 'Chamartín',
-    'Tetuán', 'Chamberí', 'Fuencarral-El Pardo', 'Moncloa-Aravaca',
-    'Latina', 'Carabanchel', 'Usera', 'Puente de Vallecas',
-    'Moratalaz', 'Ciudad Lineal', 'Hortaleza', 'Villaverde',
-    'Villa de Vallecas', 'Vicálvaro', 'San Blas-Canillejas', 'Barajas'
+    'Centro',
+    'Arganzuela',
+    'Retiro',
+    'Salamanca',
+    'Chamartín',
+    'Tetuán',
+    'Chamberí',
+    'Fuencarral-El Pardo',
+    'Moncloa-Aravaca',
+    'Latina',
+    'Carabanchel',
+    'Usera',
+    'Puente de Vallecas',
+    'Moratalaz',
+    'Ciudad Lineal',
+    'Hortaleza',
+    'Villaverde',
+    'Villa de Vallecas',
+    'Vicálvaro',
+    'San Blas-Canillejas',
+    'Barajas'
   ];
 
   private map!: L.Map;
@@ -71,6 +86,7 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
     }
 
     const storedRoutes = localStorage.getItem('saved_routes');
+
     if (storedRoutes) {
       this.savedRoutes = JSON.parse(storedRoutes);
     }
@@ -81,7 +97,9 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
   }
 
   private buildInitials(name: string): string {
-    if (!name) return '?';
+    if (!name) {
+      return '?';
+    }
 
     const parts = name.trim().split(' ');
 
@@ -175,17 +193,8 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
   }
 
   goToVehicles(): void {
-    this.activeSection = 'vehiculos';
     this.activeTab = 'vehiculos';
     this.router.navigate(['/vehicles']);
-  }
-
-  goToProfile(): void {
-    this.router.navigate(['/profile']);
-  }
-
-  goToDashboard(): void {
-    this.router.navigate(['/dashboard']);
   }
 
   toggleSidebar(): void {

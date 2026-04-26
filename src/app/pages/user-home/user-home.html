@@ -1,6 +1,7 @@
 <div class="main-wrapper">
   <nav class="top-nav">
     <div class="logo">ECO<span>TRAFFIC</span></div>
+
     <div class="nav-actions">
       <div class="user-pill" (click)="toggleUserMenu()" [class.open]="userMenuOpen">
         <div class="user-avatar">{{ userInitials }}</div>
@@ -13,6 +14,7 @@
           <img src="assets/Icons/icon-user.png" class="dropdown-icon-img" alt="">
           Mi Perfil
         </a>
+
         <button class="dropdown-item danger" (click)="logout()">
           <img src="assets/Icons/logout-icon.png" class="dropdown-icon-img" alt="">
           Cerrar Sesión
@@ -23,19 +25,22 @@
 
   <div class="dashboard-container" [class.sidebar-collapsed]="!sidebarOpen">
     <aside class="info-panel" [class.collapsed]="!sidebarOpen">
-
       <button class="sidebar-toggle-tab" (click)="toggleSidebar()" [title]="sidebarOpen ? 'Colapsar panel' : 'Abrir panel'">
-        <img src="assets/Icons/arrow-left.png" 
-             [style.transform]="sidebarOpen ? 'none' : 'rotate(180deg)'" 
-             class="toggle-icon-img" alt="toggle">
+        <img
+          src="assets/Icons/arrow-left.png"
+          [style.transform]="sidebarOpen ? 'none' : 'rotate(180deg)'"
+          class="toggle-icon-img"
+          alt="toggle">
       </button>
 
       <div class="user-card">
         <div class="user-card-avatar">{{ userInitials }}</div>
+
         <div class="user-card-info">
           <p class="user-card-name">{{ user?.name }}</p>
           <p class="user-card-mail">{{ user?.mail }}</p>
         </div>
+
         <a routerLink="/profile" class="edit-profile-btn" title="Editar perfil">
           <img src="assets/Icons/edit-icon.png" class="edit-icon-img" alt="Editar">
           <span class="edit-label">Editar</span>
@@ -45,12 +50,14 @@
       <div class="search-wrapper">
         <div class="search-card">
           <img src="assets/Icons/search-icon.png" class="search-icon-img" alt="Buscar">
+
           <input
             type="text"
             [(ngModel)]="searchQuery"
             (focus)="mostrarSugerencias = true"
             (keyup.enter)="onSearch()"
             placeholder="Busca una zona en Madrid...">
+
           <button class="btn-go" (click)="onSearch()">
             <img src="assets/Icons/go-icon.png" class="go-icon-img" alt="Ir">
           </button>
@@ -69,10 +76,12 @@
           <span class="stat-value">{{ searchCount }}</span>
           <span class="stat-label">Búsquedas</span>
         </div>
+
         <div class="stat-chip">
           <span class="stat-value">{{ savedRoutes.length }}</span>
           <span class="stat-label">Rutas</span>
         </div>
+
         <div class="stat-chip eco">
           <span class="stat-value">{{ ecoScore }}</span>
           <span class="stat-label">Eco Score</span>
@@ -84,18 +93,22 @@
           <img src="assets/Icons/home-icon.png" class="menu-icon-img" alt="">
           Inicio
         </button>
+
         <button class="menu-btn" [class.active]="activeTab === 'rutas'" (click)="activeTab = 'rutas'">
           <img src="assets/Icons/history-icon.png" class="menu-icon-img" alt="">
           Historial
         </button>
-        <button class="aside-btn" [class.active]="activeSection === 'vehiculos'" (click)="goToVehicles()">
-        <img src="assets/Icons/car-icon.png" class="menu-icon-img" alt="">
-        Mis vehículos
+
+        <button class="menu-btn" [class.active]="activeTab === 'vehiculos'" (click)="goToVehicles()">
+          <img src="assets/Icons/car-icon.png" class="menu-icon-img" alt="">
+          Mis vehículos
         </button>
+
         <button class="menu-btn" [class.active]="activeTab === 'mascota'" (click)="activeTab = 'mascota'">
           <img src="assets/Icons/pet-tab-icon.png" class="menu-icon-img" alt="">
           Mi mascota
         </button>
+
         <button class="menu-btn" [class.active]="activeTab === 'ayuda'" (click)="activeTab = 'ayuda'">
           <img src="assets/Icons/help-icon.png" class="menu-icon-img" alt="">
           Ayuda / Dudas
@@ -104,12 +117,15 @@
 
       <div class="recent-routes" *ngIf="activeTab === 'rutas'">
         <p class="section-label">Últimas rutas</p>
+
         <div class="route-item" *ngFor="let route of savedRoutes">
           <div class="route-dot"></div>
+
           <div class="route-info">
             <span class="route-name">{{ route.name }}</span>
             <span class="route-meta">{{ route.distance_km }} km · {{ route.duration_min }} min</span>
           </div>
+
           <button class="route-replay" (click)="replayRoute(route)" title="Volver a explorar">
             <img src="assets/Icons/play-icon.png" class="replay-icon-img" alt="replay">
           </button>
@@ -119,20 +135,20 @@
       <div class="mascota-container" *ngIf="activeTab === 'inicio'">
         <img src="assets/Pet/LoginPet.png" alt="Mascota">
       </div>
-
     </aside>
 
     <main class="map-section" (click)="mostrarSugerencias = false">
-
       <div class="shortcuts-bar">
         <button class="shortcut-btn" (click)="seleccionarZona('Centro')">
           <img src="assets/Icons/history-icon.png" class="shortcut-icon-img" alt="">
           <span>Casa</span>
         </button>
+
         <button class="shortcut-btn" (click)="activeTab = 'rutas'">
           <img src="assets/Icons/bookmark-icon.png" class="shortcut-icon-img" alt="">
           <span>Guardados</span>
         </button>
+
         <button class="shortcut-btn">
           <img src="assets/Icons/star-icon.png" class="shortcut-icon-img" alt="">
           <span>Favoritos</span>
