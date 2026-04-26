@@ -3,49 +3,51 @@
     <div class="register-card">
       <div class="register-header">
         <h2 class="logo">ECO<span>TRAFFIC</span></h2>
-        <h1>CREATE YOUR ACCOUNT</h1>
-        <p>Únete a la comunidad líder en tráfico ecológico y explora Madrid de forma segura.</p>
+        <h1>CREA TU CUENTA</h1>
+        <p>Obtén tu propia mascota personalizada y accede a todas las funcionalidades</p>
       </div>
 
-      <form class="register-form">
+      <form class="register-form" [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+        
         <div class="input-field-group">
-          <label>Full Name</label>
-          <div class="input-wrapper">
-            <img src="assets/icon-user.png" class="field-icon">
-            <input type="text" placeholder="Tu nombre completo">
+          <label>Nombre Completo</label>
+          <div class="input-wrapper" [class.error]="registerForm.get('nombre')?.invalid && registerForm.get('nombre')?.touched">
+            <img src="assets/Icons/icon-user.png" class="field-icon">
+            <input type="text" formControlName="nombre" placeholder="Tu nombre completo">
           </div>
         </div>
 
         <div class="input-field-group">
-          <label>Email Address</label>
-          <div class="input-wrapper">
-            <img src="assets/icon-email.png" class="field-icon">
-            <input type="email" placeholder="tu@email.com">
+          <label>Dirección de Email</label>
+          <div class="input-wrapper" [class.error]="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
+            <img src="assets/Icons/icon-mail.png" class="field-icon">
+            <input type="email" formControlName="email" placeholder="tu@email.com">
           </div>
+          <small class="error-text" *ngIf="registerForm.get('email')?.errors?.['email'] && registerForm.get('email')?.touched">
+            El correo no es válido.
+          </small>
         </div>
 
         <div class="input-field-group">
-          <label>Create Password</label>
-          <div class="input-wrapper">
-            <img src="assets/icon-lock.png" class="field-icon">
-            <input type="password" placeholder="Mínimo 8 caracteres">
+          <label>Crear Contraseña</label>
+          <div class="input-wrapper" [class.error]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
+            <img src="assets/Icons/icon-lock.png" class="field-icon">
+            <input type="password" formControlName="password" placeholder="Mínimo 8 caracteres">
           </div>
+          <small class="error-text" *ngIf="registerForm.get('password')?.errors?.['minlength'] && registerForm.get('password')?.touched">
+            Debe tener al menos 8 caracteres.
+          </small>
         </div>
 
         <div class="input-field-group">
-          <label>Confirm Password</label>
-          <div class="input-wrapper">
-            <img src="assets/icon-lock.png" class="field-icon">
-            <input type="password" placeholder="Repite tu contraseña">
+          <label>Confirmar Contraseña</label>
+          <div class="input-wrapper" [class.error]="registerForm.hasError('mismatch') && registerForm.get('confirmPassword')?.touched">
+            <img src="assets/Icons/icon-lock.png" class="field-icon">
+            <input type="password" formControlName="confirmPassword" placeholder="Repite tu contraseña">
           </div>
-        </div>
-
-        <div class="input-field-group">
-          <label>Interests</label>
-          <div class="input-wrapper">
-            <img src="assets/icon-leaf.png" class="field-icon">
-            <input type="text" placeholder="Zonas de interés o vehículo">
-          </div>
+          <small class="error-text" *ngIf="registerForm.hasError('mismatch') && registerForm.get('confirmPassword')?.touched">
+            Las contraseñas no coinciden.
+          </small>
         </div>
 
         <button type="submit" class="btn-primary">Register Now</button>
@@ -59,7 +61,7 @@
 
   <div class="illustration-side">
     <div class="welcome-content">
-      <img src="assets/Pet/LoginPet.png" alt="Mascota EcoTraffic" class="mascota-img">
+      <img src="assets/Pet/RegisterPet.png" alt="Mascota EcoTraffic" class="mascota-img">
     </div>
   </div>
 </div>

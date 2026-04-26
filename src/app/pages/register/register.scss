@@ -121,3 +121,16 @@
   margin-top: 20px;
   a { font-weight: 700; color: #243329; text-decoration: none; }
 }
+
+.error-text {
+  color: #ff4d4d;
+  font-size: 11px;
+  margin-top: 5px;
+  display: block;
+  font-weight: 600;
+}
+
+.input-wrapper.error {
+  border-color: #ff4d4d !important;
+  background-color: #fffafa;
+}
