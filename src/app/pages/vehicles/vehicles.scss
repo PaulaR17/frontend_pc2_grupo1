@@ -716,38 +716,73 @@ $border-light:  #dadce0;
 // Modal footer
 .modal-footer {
   padding: 16px 24px 22px;
-  display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
   border-top: 1px solid #f0f2f4;
+  background: $white;
+  flex-shrink: 0;
 
   .btn-cancel {
-    padding: 10px 20px; border-radius: 20px;
-    border: 1px solid $border-light; background: none;
-    font-size: 14px; font-weight: 600; color: #666;
-    cursor: pointer; transition: background 0.15s;
-    &:hover { background: #f5f7fa; }
+    padding: 10px 20px;
+    border-radius: 20px;
+    border: 1px solid $border-light;
+    background: $white;
+    font-size: 14px;
+    font-weight: 600;
+    color: #666;
+    cursor: pointer;
+    transition: background 0.15s;
+
+    &:hover:not(:disabled) {
+      background: #f5f7fa;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   }
 
   .btn-save {
-    display: flex; align-items: center; gap: 7px;
-    padding: 10px 24px; border-radius: 20px;
-    background: $primary-dark; color: $white;
-    border: none; font-size: 14px; font-weight: 700;
-    cursor: pointer; transition: all 0.2s;
-    svg { width: 14px; height: 14px; }
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-width: 150px;
+    padding: 10px 24px;
+    border-radius: 20px;
+    background: $primary-dark;
+    color: $white;
+    border: none;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
 
     &:hover:not(:disabled) {
       background: #2d4a35;
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(27,38,30,0.3);
+      box-shadow: 0 4px 12px rgba(27, 38, 30, 0.3);
     }
 
     &:disabled {
       opacity: 0.4;
       cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
     }
   }
+}
 
-  .vehicles-notification {
+.vehicles-notification {
   position: absolute;
   top: 18px;
   right: 24px;
@@ -805,4 +840,19 @@ $border-light:  #dadce0;
   width: 18px;
   height: 18px;
 }
+
+/* Seguridad extra: evita iconos gigantes por etiquetas mal cerradas o estilos heredados */
+.modal-card svg {
+  max-width: 120px;
+}
+
+.modal-footer svg,
+.modal-header svg,
+.card-context-menu svg,
+.add-vehicle-btn svg,
+.filter-chip svg,
+.dropdown-item svg,
+.menu-btn svg,
+.color-opt svg {
+  max-width: none;
 }
