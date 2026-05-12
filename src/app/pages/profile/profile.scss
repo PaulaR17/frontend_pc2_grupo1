@@ -1,17 +1,18 @@
+// ─── PROFILE PAGE STYLES ───────────────────────────────
 $primary-dark: #1b261e;
 $accent-green: #4ade80;
 $white: #ffffff;
 $border-light: #dadce0;
 $bg: #f4f7f4;
 
-// ── CONTROL DE IMÁGENES (Ajuste para image_8c2870.png) ──
+// ── CONTROL DE IMÁGENES ─────────────────────────────────
 .nav-icon-img, .dropdown-icon-img, .menu-icon-img, .header-icon-img, 
 .input-icon-img, .badge-icon-img, .btn-icon-img, .edit-icon-img {
-  width: 18px !important; // Tamaño forzado
+  width: 18px !important;
   height: 18px !important;
   object-fit: contain;
   flex-shrink: 0;
-  display: block; // Evita espacios fantasma
+  display: block;
 }
 
 .main-wrapper {
@@ -68,9 +69,9 @@ $bg: #f4f7f4;
 
 .user-dropdown {
   position: absolute;
-  top: calc(100% + 10px); // Aparece 10px debajo del pill
+  top: calc(100% + 10px);
   right: 0;
-  background: #ffffff !important; // Fondo blanco sólido (Image 2)
+  background: #ffffff !important;
   border: 1px solid $border-light;
   border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.15);
@@ -79,14 +80,30 @@ $bg: #f4f7f4;
   z-index: 2000;
 
   .dropdown-item {
-    display: flex; align-items: center; gap: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
     padding: 12px 16px;
-    color: #333333 !important; // Texto oscuro (Image 2)
-    text-decoration: none; font-size: 14px; font-weight: 600;
-    background: none; border: none; width: 100%; cursor: pointer; text-align: left;
+    color: #333333 !important;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    background: none;
+    border: none;
+    width: 100%;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.2s;
 
-    &:hover { background: #f5f7fa; }
-    &.danger { color: #dc2626 !important; border-top: 1px solid #eee; margin-top: 4px; padding-top: 12px; }
+    &:hover { 
+      background: #f5f7fa; 
+    }
+    &.danger { 
+      color: #dc2626 !important; 
+      border-top: 1px solid #eee; 
+      margin-top: 4px; 
+      padding-top: 12px; 
+    }
   }
 }
 
@@ -150,8 +167,88 @@ $bg: #f4f7f4;
 // ── FORMULARIO (Datos Personales) ──
 .form-card { background: white; padding: 32px; border-radius: 20px; border: 1px solid $border-light; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
 .form-card-header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; .header-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; img { width: 22px !important; height: 22px !important; } &.personal { background: #eff6ff; } } h2 { font-size: 1.1rem; font-weight: 800; margin: 0; color: $primary-dark; } }
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; .full { grid-column: 1 / -1; } }
-.field-group { display: flex; flex-direction: column; gap: 6px; label { font-size: 11px; font-weight: 700; color: #555; text-transform: uppercase; } }
-.input-wrap { display: flex; align-items: center; gap: 12px; background: #f9fafb; border: 1.5px solid #e5e7eb; border-radius: 12px; padding: 0 15px; margin-top: 5px; input, textarea { border: none; background: transparent; padding: 12px 0; width: 100%; outline: none; font-size: 14px; } }
-.btn-cancel { background: #f3f4f6; color: $primary-dark; font-weight: 700; border: none; padding: 12px 24px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 10px; margin-top: 20px; }
-.btn-save { background: linear-gradient(135deg, #22c55e 0%, $accent-green 100%); color: $primary-dark; font-weight: 700; border: none; padding: 12px 24px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 10px; margin-top: 20px; }
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+
+  .full {
+    grid-column: 1 / -1;
+  }
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #555;
+    text-transform: uppercase;
+  }
+}
+
+.input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f9fafb;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 0 15px;
+  margin-top: 5px;
+  transition: all 0.2s;
+
+  &:focus-within {
+    border-color: $accent-green;
+  }
+
+  input, textarea {
+    border: none;
+    background: transparent;
+    padding: 12px 0;
+    width: 100%;
+    outline: none;
+    font-size: 14px;
+  }
+}
+
+.btn-cancel {
+  background: #f3f4f6;
+  color: $primary-dark;
+  font-weight: 700;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #e5e7eb;
+  }
+}
+
+.btn-save {
+  background: linear-gradient(135deg, #22c55e 0%, $accent-green 100%);
+  color: $primary-dark;
+  font-weight: 700;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  transition: all 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+}

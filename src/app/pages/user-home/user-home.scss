@@ -1,4 +1,4 @@
-// ─── VARIABLES ──────────────────────────────────────────
+// ─── USER-HOME PAGE WITH BOOTSTRAP ─────────────────────
 $primary-dark: #1b261e;
 $accent-green: #4ade80;
 $white: #ffffff;
@@ -224,21 +224,36 @@ $bg-main: #f8fafc;
 
 // ─── MENU ITEMS ──────────────────────────────────────────
 .menu-btn {
-  display: flex; align-items: center; gap: 12px;
-  width: 100%; padding: 12px 16px; border-radius: 12px;
-  border: 1px solid #eee; background: white;
-  cursor: pointer; font-size: 14px; font-weight: 600; color: #444;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid #eee;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #444;
   transition: all 0.2s;
 
-  .menu-icon-img { opacity: 0.6; }
+  .menu-icon-img {
+    opacity: 0.6;
+  }
 
-  &:hover { background: #f9f9f9; }
+  &:hover {
+    background: #f9f9f9;
+  }
 
   &.active {
-    background-color: $primary-dark; color: white; border-color: $primary-dark;
-    .menu-icon-img { 
-      filter: brightness(0) invert(1); // Hace el icono blanco
-      opacity: 1; 
+    background-color: $primary-dark;
+    color: white;
+    border-color: $primary-dark;
+
+    .menu-icon-img {
+      filter: brightness(0) invert(1);
+      opacity: 1;
     }
   }
 }
