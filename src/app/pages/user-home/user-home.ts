@@ -29,7 +29,6 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
   user: any = null;
   userInitials = '';
   userMenuOpen = false;
-  sidebarOpen = true;
 
   searchCount = 0;
   ecoScore = 0;
@@ -40,34 +39,36 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
 
   savedRoutes: SavedRoute[] = [];
 
+  // Distritos de Madrid (no cambia)
   zonasDisponibles: string[] = [
-    'Centro',
-    'Arganzuela',
-    'Retiro',
-    'Salamanca',
-    'Chamartín',
-    'Tetuán',
-    'Chamberí',
-    'Fuencarral-El Pardo',
-    'Moncloa-Aravaca',
-    'Latina',
-    'Carabanchel',
-    'Usera',
-    'Puente de Vallecas',
-    'Moratalaz',
-    'Ciudad Lineal',
-    'Hortaleza',
-    'Villaverde',
-    'Villa de Vallecas',
-    'Vicálvaro',
-    'San Blas-Canillejas',
-    'Barajas'
+    'Centro', 'Arganzuela', 'Retiro', 'Salamanca', 'Chamartín', 'Tetuán',
+    'Chamberí', 'Fuencarral-El Pardo', 'Moncloa-Aravaca', 'Latina',
+    'Carabanchel', 'Usera', 'Puente de Vallecas', 'Moratalaz', 'Ciudad Lineal',
+    'Hortaleza', 'Villaverde', 'Villa de Vallecas', 'Vicálvaro',
+    'San Blas-Canillejas', 'Barajas'
   ];
 
   private map!: L.Map;
   private zoneLayer: L.LayerGroup = L.layerGroup();
 
   ngOnInit(): void {
+    this.cargarUsuarioActual();
+    this.cargarRutasGuardadas();
+  }
+
+  ngAfterViewInit(): void {
+    this.initMap();
+  }
+
+  // -------------------------------------------------------
+  //  CARGA INICIAL
+  // -------------------------------------------------------
+
+  /**
+   * Carga el usuario actual.
+   * Refactorizado para usar if/else (sin return dentro del if).
+   */
+  private cargarUsuarioActual(): void {
     const id = localStorage.getItem('user_id');
 
     if (id) {
@@ -77,14 +78,14 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
           this.userInitials = this.buildInitials(res.name);
           this.ecoScore = res.eco_score ?? Math.floor(Math.random() * 40) + 60;
         },
-        error: () => {
-          this.logout();
-        }
+        error: () => this.logout()
       });
     } else {
       this.logout();
     }
+  }
 
+  private cargarRutasGuardadas(): void {
     const storedRoutes = localStorage.getItem('saved_routes');
 
     if (storedRoutes) {
@@ -92,72 +93,80 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
     }
   }
 
-  ngAfterViewInit(): void {
-    this.initMap();
-  }
-
+  /** Iniciales (1 ó 2 letras) a partir del nombre. */
   private buildInitials(name: string): string {
-    if (!name) {
-      return '?';
+    let iniciales = '?';
+
+    if (name) {
+      const parts = name.trim().split(' ');
+      iniciales = parts.length >= 2
+        ? (parts[0][0] + parts[1][0]).toUpperCase()
+        : parts[0][0].toUpperCase();
     }
-
-    const parts = name.trim().split(' ');
-
-    return parts.length >= 2
-      ? (parts[0][0] + parts[1][0]).toUpperCase()
-      : parts[0][0].toUpperCase();
+    return iniciales;
   }
 
   private initMap(): void {
     this.map = L.map('map', {
       center: [40.4167, -3.7033],
       zoom: 12,
-      zoomControl: false
+      zoomControl: true
     });
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
     this.zoneLayer.addTo(this.map);
   }
 
+  // -------------------------------------------------------
+  //  BÚSQUEDA Y RUTA
+  // -------------------------------------------------------
+
+  /**
+   * Lanza una búsqueda; solo procede si hay texto.
+   * Refactorizado: if/else en vez de return-temprano.
+   */
   onSearch(): void {
     const query = this.searchQuery.trim();
 
-    if (query === '') {
-      return;
+    if (query !== '') {
+      this.mostrarSugerencias = false;
+      this.realizarBusqueda(query);
     }
+  }
 
-    this.mostrarSugerencias = false;
-
+  private realizarBusqueda(query: string): void {
     this.dataService.searchLocation(query).subscribe({
       next: (searchRes: any) => {
         const destination = searchRes.results?.[0];
 
-        if (!destination) {
-          return;
+        if (destination) {
+          this.guardarYMostrarRuta(destination, query);
         }
-
-        this.searchCount++;
-
-        const route: SavedRoute = {
-          name: destination.text ?? query,
-          distance_km: destination.distance_km ?? 0,
-          duration_min: destination.duration_min ?? 0,
-          lat: destination.lat,
-          lng: destination.lon
-        };
-
-        this.savedRoutes.unshift(route);
-        localStorage.setItem('saved_routes', JSON.stringify(this.savedRoutes.slice(0, 20)));
-
-        this.displayZoneOnMap({
-          latitude: destination.lat,
-          longitude: destination.lon,
-          text: destination.text
-        });
       },
       error: () => {
         alert('No se ha podido buscar la ubicación.');
       }
+    });
+  }
+
+  private guardarYMostrarRuta(destination: any, query: string): void {
+    this.searchCount++;
+
+    const route: SavedRoute = {
+      name: destination.text ?? query,
+      distance_km: destination.distance_km ?? 0,
+      duration_min: destination.duration_min ?? 0,
+      lat: destination.lat,
+      lng: destination.lon
+    };
+
+    this.savedRoutes.unshift(route);
+    localStorage.setItem('saved_routes', JSON.stringify(this.savedRoutes.slice(0, 20)));
+
+    this.displayZoneOnMap({
+      latitude: destination.lat,
+      longitude: destination.lon,
+      text: destination.text
     });
   }
 
@@ -182,7 +191,6 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
       longitude: route.lng,
       text: route.name
     });
-
     this.activeTab = 'inicio';
   }
 
@@ -197,9 +205,6 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
     this.router.navigate(['/vehicles']);
   }
 
-  toggleSidebar(): void {
-    this.sidebarOpen = !this.sidebarOpen;
-  }
 
   toggleUserMenu(): void {
     this.userMenuOpen = !this.userMenuOpen;
@@ -209,15 +214,16 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
     this.authService.logout();
   }
 
+  /** Cierra menús cuando el usuario clica fuera. */
   @HostListener('document:click', ['$event'])
   clickOut(event: Event): void {
     const target = event.target as HTMLElement;
 
-    if (!target.closest('.search-wrapper')) {
+    if (!target.closest('.input-group')) {
       this.mostrarSugerencias = false;
     }
 
-    if (!target.closest('.nav-actions')) {
+    if (!target.closest('.navbar')) {
       this.userMenuOpen = false;
     }
   }

@@ -1,161 +1,196 @@
-<div class="main-wrapper">
-  <nav class="top-nav">
-    <div class="logo">ECO<span>TRAFFIC</span></div>
+<!--
+  User Home - EcoTraffic
+  Pantalla del usuario registrado.
+-->
+<div class="d-flex flex-column vh-100">
 
-    <div class="nav-actions">
-      <div class="user-pill" (click)="toggleUserMenu()" [class.open]="userMenuOpen">
-        <div class="user-avatar">{{ userInitials }}</div>
-        <span class="user-name-nav">{{ user?.name }}</span>
-        <img src="assets/Icons/chevron-down.png" class="nav-icon-img" alt="menu">
-      </div>
+  <!-- Navbar -->
+  <nav class="navbar navbar-dark bg-eco-dark px-3 position-relative">
+    <span class="navbar-brand logo-eco text-white fs-5 mb-0">
+      ECO<span>TRAFFIC</span>
+    </span>
 
-      <div class="user-dropdown" *ngIf="userMenuOpen">
-        <a class="dropdown-item" routerLink="/profile">
-          <img src="assets/Icons/icon-user.png" class="dropdown-icon-img" alt="">
-          Mi Perfil
-        </a>
+    <div class="position-relative">
+      <button class="btn btn-sm rounded-pill d-flex align-items-center gap-2 text-white border-0"
+              style="background: rgba(255,255,255,0.1);"
+              (click)="toggleUserMenu()">
+        <span class="rounded-circle bg-success text-eco-dark fw-bold d-inline-flex align-items-center justify-content-center"
+              style="width: 32px; height: 32px;">
+          {{ userInitials }}
+        </span>
+        <span class="d-none d-sm-inline fw-semibold">{{ user?.name }}</span>
+      </button>
 
-        <button class="dropdown-item danger" (click)="logout()">
-          <img src="assets/Icons/logout-icon.png" class="dropdown-icon-img" alt="">
-          Cerrar Sesión
-        </button>
-      </div>
+      <ul class="list-group shadow position-absolute end-0 mt-2"
+          *ngIf="userMenuOpen"
+          style="min-width: 200px; z-index: 1100;">
+        <a class="list-group-item list-group-item-action" routerLink="/profile">Mi perfil</a>
+        <button class="list-group-item list-group-item-action text-danger border-0"
+                (click)="logout()">Cerrar sesión</button>
+      </ul>
     </div>
   </nav>
 
-  <div class="dashboard-container" [class.sidebar-collapsed]="!sidebarOpen">
-    <aside class="info-panel" [class.collapsed]="!sidebarOpen">
-      <button class="sidebar-toggle-tab" (click)="toggleSidebar()" [title]="sidebarOpen ? 'Colapsar panel' : 'Abrir panel'">
-        <img
-          src="assets/Icons/arrow-left.png"
-          [style.transform]="sidebarOpen ? 'none' : 'rotate(180deg)'"
-          class="toggle-icon-img"
-          alt="toggle">
-      </button>
+  <!-- Contenido -->
+  <div class="container-fluid flex-grow-1 overflow-hidden p-0">
+    <div class="row g-0 h-100">
 
-      <div class="user-card">
-        <div class="user-card-avatar">{{ userInitials }}</div>
+      <!-- Sidebar -->
+      <aside class="col-12 col-md-5 col-lg-4 col-xl-3 bg-white border-end overflow-auto p-3">
 
-        <div class="user-card-info">
-          <p class="user-card-name">{{ user?.name }}</p>
-          <p class="user-card-mail">{{ user?.mail }}</p>
+        <!-- Tarjeta usuario -->
+        <div class="card border-0 mb-3 text-white"
+             style="background: linear-gradient(135deg, #243329 0%, #2d4a35 100%);">
+          <div class="card-body d-flex align-items-center gap-2 p-3">
+            <span class="rounded-circle bg-success text-eco-dark fw-bold d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                  style="width: 44px; height: 44px;">
+              {{ userInitials }}
+            </span>
+            <div class="flex-grow-1 text-truncate">
+              <p class="mb-0 fw-bold text-truncate">{{ user?.name }}</p>
+              <small class="opacity-75 text-truncate d-block">{{ user?.mail }}</small>
+            </div>
+            <a routerLink="/profile" class="btn btn-sm btn-outline-light rounded-pill">Editar</a>
+          </div>
         </div>
 
-        <a routerLink="/profile" class="edit-profile-btn" title="Editar perfil">
-          <img src="assets/Icons/edit-icon.png" class="edit-icon-img" alt="Editar">
-          <span class="edit-label">Editar</span>
-        </a>
-      </div>
-
-      <div class="search-wrapper">
-        <div class="search-card">
-          <img src="assets/Icons/search-icon.png" class="search-icon-img" alt="Buscar">
-
-          <input
-            type="text"
-            [(ngModel)]="searchQuery"
-            (focus)="mostrarSugerencias = true"
-            (keyup.enter)="onSearch()"
-            placeholder="Busca una zona en Madrid...">
-
-          <button class="btn-go" (click)="onSearch()">
-            <img src="assets/Icons/go-icon.png" class="go-icon-img" alt="Ir">
+        <!-- Buscador -->
+        <div class="input-group mb-3">
+          <span class="input-group-text bg-white border-end-0">
+            <img src="assets/Icons/search-icon.png" class="icon-sm" alt="">
+          </span>
+          <input type="text"
+                 class="form-control border-start-0"
+                 [(ngModel)]="searchQuery"
+                 (focus)="mostrarSugerencias = true"
+                 (keyup.enter)="onSearch()"
+                 placeholder="Busca una zona en Madrid...">
+          <button class="btn btn-success" type="button" (click)="onSearch()">
+            <img src="assets/Icons/go-icon.png" class="icon-sm" alt="Ir">
           </button>
         </div>
 
-        <ul class="suggestions-list" *ngIf="mostrarSugerencias && searchQuery.length === 0">
-          <li *ngFor="let zona of zonasDisponibles" (click)="seleccionarZona(zona)">
-            <img src="assets/Icons/pin-icon.png" class="pin-icon-img" alt="Zona">
+        <!-- Sugerencias de zonas -->
+        <ul class="list-group mb-3" *ngIf="mostrarSugerencias && searchQuery.length === 0">
+          <li class="list-group-item list-group-item-action d-flex align-items-center gap-2"
+              *ngFor="let zona of zonasDisponibles"
+              (click)="seleccionarZona(zona)"
+              style="cursor: pointer;">
+            <img src="assets/Icons/pin-icon.png" class="icon-sm" alt="">
             {{ zona }}
           </li>
         </ul>
-      </div>
 
-      <div class="stats-row">
-        <div class="stat-chip">
-          <span class="stat-value">{{ searchCount }}</span>
-          <span class="stat-label">Búsquedas</span>
-        </div>
-
-        <div class="stat-chip">
-          <span class="stat-value">{{ savedRoutes.length }}</span>
-          <span class="stat-label">Rutas</span>
-        </div>
-
-        <div class="stat-chip eco">
-          <span class="stat-value">{{ ecoScore }}</span>
-          <span class="stat-label">Eco Score</span>
-        </div>
-      </div>
-
-      <div class="menu-items">
-        <button class="menu-btn" [class.active]="activeTab === 'inicio'" (click)="activeTab = 'inicio'">
-          <img src="assets/Icons/home-icon.png" class="menu-icon-img" alt="">
-          Inicio
-        </button>
-
-        <button class="menu-btn" [class.active]="activeTab === 'rutas'" (click)="activeTab = 'rutas'">
-          <img src="assets/Icons/history-icon.png" class="menu-icon-img" alt="">
-          Historial
-        </button>
-
-        <button class="menu-btn" [class.active]="activeTab === 'vehiculos'" (click)="goToVehicles()">
-          <img src="assets/Icons/car-icon.png" class="menu-icon-img" alt="">
-          Mis vehículos
-        </button>
-
-        <button class="menu-btn" [class.active]="activeTab === 'mascota'" (click)="activeTab = 'mascota'">
-          <img src="assets/Icons/pet-tab-icon.png" class="menu-icon-img" alt="">
-          Mi mascota
-        </button>
-
-        <button class="menu-btn" [class.active]="activeTab === 'ayuda'" (click)="activeTab = 'ayuda'">
-          <img src="assets/Icons/help-icon.png" class="menu-icon-img" alt="">
-          Ayuda / Dudas
-        </button>
-      </div>
-
-      <div class="recent-routes" *ngIf="activeTab === 'rutas'">
-        <p class="section-label">Últimas rutas</p>
-
-        <div class="route-item" *ngFor="let route of savedRoutes">
-          <div class="route-dot"></div>
-
-          <div class="route-info">
-            <span class="route-name">{{ route.name }}</span>
-            <span class="route-meta">{{ route.distance_km }} km · {{ route.duration_min }} min</span>
+        <!-- Stats -->
+        <div class="row g-2 mb-3 text-center">
+          <div class="col-4">
+            <div class="card border-0 bg-light">
+              <div class="card-body p-2">
+                <div class="fw-bold fs-5 text-eco-dark">{{ searchCount }}</div>
+                <small class="text-muted small">Búsquedas</small>
+              </div>
+            </div>
           </div>
+          <div class="col-4">
+            <div class="card border-0 bg-light">
+              <div class="card-body p-2">
+                <div class="fw-bold fs-5 text-eco-dark">{{ savedRoutes.length }}</div>
+                <small class="text-muted small">Rutas</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="card border-0" style="background: #d1fae5;">
+              <div class="card-body p-2">
+                <div class="fw-bold fs-5" style="color: #065f46;">{{ ecoScore }}</div>
+                <small class="text-muted small">Eco</small>
+              </div>
+            </div>
+          </div>
+        </div>
 
-          <button class="route-replay" (click)="replayRoute(route)" title="Volver a explorar">
-            <img src="assets/Icons/play-icon.png" class="replay-icon-img" alt="replay">
+        <!-- Menú -->
+        <div class="d-grid gap-2 mb-3">
+          <button class="btn d-flex align-items-center gap-2"
+                  [class.btn-success]="activeTab === 'inicio'"
+                  [class.btn-outline-secondary]="activeTab !== 'inicio'"
+                  (click)="activeTab = 'inicio'">
+            <img src="assets/Icons/home-icon.png" class="icon-sm" alt=""> Inicio
+          </button>
+          <button class="btn d-flex align-items-center gap-2"
+                  [class.btn-success]="activeTab === 'rutas'"
+                  [class.btn-outline-secondary]="activeTab !== 'rutas'"
+                  (click)="activeTab = 'rutas'">
+            <img src="assets/Icons/history-icon.png" class="icon-sm" alt=""> Historial
+          </button>
+          <button class="btn d-flex align-items-center gap-2 btn-outline-secondary"
+                  (click)="goToVehicles()">
+            <img src="assets/Icons/car-icon.png" class="icon-sm" alt=""> Mis vehículos
+          </button>
+          <button class="btn d-flex align-items-center gap-2"
+                  [class.btn-success]="activeTab === 'mascota'"
+                  [class.btn-outline-secondary]="activeTab !== 'mascota'"
+                  (click)="activeTab = 'mascota'">
+            <img src="assets/Icons/pet-tab-icon.png" class="icon-sm" alt=""> Mi mascota
+          </button>
+          <button class="btn d-flex align-items-center gap-2"
+                  [class.btn-success]="activeTab === 'ayuda'"
+                  [class.btn-outline-secondary]="activeTab !== 'ayuda'"
+                  (click)="activeTab = 'ayuda'">
+            <img src="assets/Icons/help-icon.png" class="icon-sm" alt=""> Ayuda
           </button>
         </div>
-      </div>
 
-      <div class="mascota-container" *ngIf="activeTab === 'inicio'">
-        <img src="assets/Pet/LoginPet.png" alt="Mascota">
-      </div>
-    </aside>
+        <!-- Historial -->
+        <div *ngIf="activeTab === 'rutas'">
+          <h6 class="text-muted text-uppercase small fw-bold">Últimas rutas</h6>
+          <div class="list-group">
+            <button class="list-group-item list-group-item-action d-flex align-items-center gap-2"
+                    *ngFor="let route of savedRoutes"
+                    (click)="replayRoute(route)">
+              <span class="rounded-circle bg-success" style="width: 8px; height: 8px; flex-shrink: 0;"></span>
+              <div class="flex-grow-1 text-truncate text-start">
+                <div class="fw-semibold text-truncate">{{ route.name }}</div>
+                <small class="text-muted">{{ route.distance_km }} km · {{ route.duration_min }} min</small>
+              </div>
+            </button>
+            <div class="list-group-item text-muted small" *ngIf="savedRoutes.length === 0">
+              Aún no tienes rutas guardadas.
+            </div>
+          </div>
+        </div>
 
-    <main class="map-section" (click)="mostrarSugerencias = false">
-      <div class="shortcuts-bar">
-        <button class="shortcut-btn" (click)="seleccionarZona('Centro')">
-          <img src="assets/Icons/history-icon.png" class="shortcut-icon-img" alt="">
-          <span>Casa</span>
-        </button>
+        <!-- Mascota -->
+        <div class="text-center mt-3" *ngIf="activeTab === 'inicio'">
+          <img src="assets/Pet/LoginPet.png"
+               alt="Mascota"
+               class="img-fluid"
+               style="max-height: 180px;">
+        </div>
 
-        <button class="shortcut-btn" (click)="activeTab = 'rutas'">
-          <img src="assets/Icons/bookmark-icon.png" class="shortcut-icon-img" alt="">
-          <span>Guardados</span>
-        </button>
+      </aside>
 
-        <button class="shortcut-btn">
-          <img src="assets/Icons/star-icon.png" class="shortcut-icon-img" alt="">
-          <span>Favoritos</span>
-        </button>
-      </div>
+      <!-- Mapa -->
+      <main class="col-12 col-md-7 col-lg-8 col-xl-9 position-relative"
+            (click)="mostrarSugerencias = false">
 
-      <div id="map" class="map-viewport"></div>
-    </main>
+        <div class="d-flex gap-2 p-2 bg-white border-bottom overflow-auto">
+          <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 flex-shrink-0"
+                  (click)="seleccionarZona('Centro')">
+            <img src="assets/Icons/history-icon.png" class="icon-sm" alt=""> Casa
+          </button>
+          <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 flex-shrink-0"
+                  (click)="activeTab = 'rutas'">
+            <img src="assets/Icons/bookmark-icon.png" class="icon-sm" alt=""> Guardados
+          </button>
+          <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 flex-shrink-0">
+            <img src="assets/Icons/star-icon.png" class="icon-sm" alt=""> Favoritos
+          </button>
+        </div>
+
+        <div id="map" style="height: calc(100% - 50px); width: 100%;"></div>
+      </main>
+
+    </div>
   </div>
 </div>

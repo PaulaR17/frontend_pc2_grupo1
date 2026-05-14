@@ -1,61 +1,102 @@
-<div class="login-page">
-  <div class="illustration-side">
-    <div class="welcome-content">
-      <img src="assets/Pet/LoginPet.png" alt="Mascota EcoTraffic" class="mascota-img">
-    </div>
-  </div>
+<!--
+  Login - EcoTraffic
+  Layout 2 columnas con Bootstrap grid:
+    - Columna izquierda (col-lg-6): ilustración con la mascota (verde oscuro)
+    - Columna derecha  (col-lg-6): tarjeta con el formulario
+  En móvil (col-12) la ilustración se oculta para dejar todo el espacio al formulario.
+-->
+<div class="container-fluid p-0 min-vh-100">
+  <div class="row g-0 min-vh-100">
 
-  <div class="form-side">
-    <div class="login-card">
-      <div class="login-header">
-        <h2 class="logo">ECO<span>TRAFFIC</span></h2>
-        <p>Inicia sesión para continuar</p>
+    <!-- Ilustración: solo se ve en pantallas md o más grandes -->
+    <div class="col-lg-6 d-none d-md-flex align-items-center justify-content-center bg-eco-dark p-4">
+      <img src="assets/Pet/LoginPet.png"
+           alt="Mascota EcoTraffic"
+           class="img-fluid"
+           style="max-width: 75%;">
+    </div>
+
+    <!-- Formulario -->
+    <div class="col-lg-6 d-flex align-items-center justify-content-center bg-light p-4">
+      <div class="card shadow-sm border-0 w-100" style="max-width: 420px;">
+        <div class="card-body p-4 p-md-5">
+
+          <!-- Logo + título -->
+          <div class="text-center mb-4">
+            <h2 class="logo-eco fs-2 mb-1">ECO<span>TRAFFIC</span></h2>
+            <p class="text-muted small mb-0">Inicia sesión para continuar</p>
+          </div>
+
+          <!-- Formulario -->
+          <form (ngSubmit)="onLogin()" novalidate>
+
+            <!-- Email -->
+            <div class="mb-3">
+              <label class="form-label small fw-semibold" for="login-mail">Email</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white">
+                  <img src="assets/Icons/icon-mail.png" class="icon-sm" alt="">
+                </span>
+                <input id="login-mail"
+                       type="email"
+                       name="mail"
+                       class="form-control"
+                       [(ngModel)]="loginData.mail"
+                       placeholder="tu@email.com"
+                       autocomplete="email">
+              </div>
+            </div>
+
+            <!-- Password -->
+            <div class="mb-3">
+              <label class="form-label small fw-semibold" for="login-pass">Contraseña</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white">
+                  <img src="assets/Icons/icon-lock.png" class="icon-sm" alt="">
+                </span>
+                <input id="login-pass"
+                       type="password"
+                       name="password"
+                       class="form-control"
+                       [(ngModel)]="loginData.password"
+                       placeholder="********"
+                       autocomplete="current-password">
+              </div>
+            </div>
+
+            <!-- Avisos -->
+            <div class="alert alert-danger py-2 small" *ngIf="errorMessage">
+              {{ errorMessage }}
+            </div>
+            <div class="alert alert-success py-2 small" *ngIf="successMessage">
+              {{ successMessage }}
+            </div>
+
+            <!-- Botón principal -->
+            <button type="submit"
+                    class="btn btn-success w-100 fw-semibold py-2"
+                    [disabled]="loading">
+              {{ loading ? 'Entrando...' : 'Iniciar sesión' }}
+            </button>
+
+            <!-- Pie del formulario -->
+            <div class="text-center mt-4 small">
+              <a routerLink="/recovery" class="text-muted text-decoration-none d-block mb-2">
+                ¿Olvidaste tu contraseña?
+              </a>
+              <p class="mb-0">
+                ¿No tienes cuenta?
+                <a routerLink="/register" class="fw-bold text-eco-dark text-decoration-none">
+                  Regístrate
+                </a>
+              </p>
+            </div>
+
+          </form>
+
+        </div>
       </div>
-
-      <form class="login-form" (ngSubmit)="onLogin()">
-        <div class="input-field-group">
-          <label>Username or Email</label>
-          <div class="input-wrapper">
-            <img src="assets/Icons/icon-mail.png" class="field-icon">
-            <input
-              type="email"
-              name="mail"
-              [(ngModel)]="loginData.mail"
-              placeholder="tu@email.com"
-              autocomplete="email">
-          </div>
-        </div>
-
-        <div class="input-field-group">
-          <label>Password</label>
-          <div class="input-wrapper">
-            <img src="assets/Icons/icon-lock.png" class="field-icon">
-            <input
-              type="password"
-              name="password"
-              [(ngModel)]="loginData.password"
-              placeholder="********"
-              autocomplete="current-password">
-          </div>
-        </div>
-
-        <p *ngIf="errorMessage" style="color: #c0392b; font-weight: 600;">
-          {{ errorMessage }}
-        </p>
-
-        <p *ngIf="successMessage" style="color: #1b8f4d; font-weight: 600;">
-          {{ successMessage }}
-        </p>
-
-        <button type="submit" class="btn-primary" [disabled]="loading">
-          {{ loading ? 'Entrando...' : 'Log In' }}
-        </button>
-
-        <div class="form-footer">
-          <a routerLink="/recovery">¿Olvidaste tu contraseña?</a>
-          <p>¿No tienes cuenta? <a routerLink="/register">Regístrate</a></p>
-        </div>
-      </form>
     </div>
+
   </div>
 </div>

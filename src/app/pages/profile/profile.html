@@ -1,144 +1,200 @@
-<div class="main-wrapper">
+<!-- Profile - EcoTraffic -->
+<div class="d-flex flex-column vh-100">
 
-  <nav class="top-nav">
-    <a routerLink="/user-home" class="logo">ECO<span>TRAFFIC</span></a>
-    
-    <div class="nav-actions">
-      <div class="user-pill" (click)="toggleUserMenu()" [class.open]="userMenuOpen">
-        <div class="user-avatar">{{ userInitials }}</div>
-        <span class="user-name-nav">{{ form.name || user?.name }}</span>
-        <img src="assets/Icons/chevron-down.png" class="nav-icon-img" alt="Desplegar">
-      </div>
+  <!-- Navbar -->
+  <nav class="navbar navbar-dark bg-eco-dark px-3 position-relative">
+    <a routerLink="/user-home" class="navbar-brand logo-eco text-white fs-5 mb-0 text-decoration-none">
+      ECO<span>TRAFFIC</span>
+    </a>
 
-      <div class="user-dropdown" *ngIf="userMenuOpen">
-        <a class="dropdown-item" routerLink="/user-home">
-          <img src="assets/Icons/home-icon.png" class="dropdown-icon-img" alt="">
-          Inicio
-        </a>
-        <button class="dropdown-item danger" (click)="logout()">
-          <img src="assets/Icons/logout-icon.png" class="dropdown-icon-img" alt="">
-          Cerrar Sesión
-        </button>
-      </div>
+    <div class="position-relative">
+      <button class="btn btn-sm rounded-pill d-flex align-items-center gap-2 text-white border-0"
+              style="background: rgba(255,255,255,0.1);"
+              (click)="toggleUserMenu()">
+        <span class="rounded-circle bg-success text-eco-dark fw-bold d-inline-flex align-items-center justify-content-center"
+              style="width: 32px; height: 32px;">
+          {{ userInitials }}
+        </span>
+        <span class="d-none d-sm-inline fw-semibold">{{ form.name || user?.name }}</span>
+      </button>
+
+      <ul class="list-group shadow position-absolute end-0 mt-2"
+          *ngIf="userMenuOpen"
+          style="min-width: 200px; z-index: 1100;">
+        <a class="list-group-item list-group-item-action" routerLink="/user-home">Inicio</a>
+        <button class="list-group-item list-group-item-action text-danger border-0"
+                (click)="logout()">Cerrar sesión</button>
+      </ul>
     </div>
   </nav>
 
-  <div class="profile-body">
+  <!-- Contenido -->
+  <div class="container-fluid flex-grow-1 overflow-auto bg-light p-3 p-md-4">
+    <div class="row g-4">
 
-    <aside class="profile-aside">
-      
-      <div class="avatar-hero">
-        <div class="avatar-ring">
-          <div class="avatar-circle" *ngIf="!avatarPreview">{{ userInitials }}</div>
-          <img *ngIf="avatarPreview" [src]="avatarPreview" class="avatar-img" alt="Foto de perfil">
-          <label class="avatar-upload-btn" title="Cambiar foto">
-            <img src="assets/Icons/camera-icon.png" class="edit-icon-img" alt="Subir">
-            <input type="file" accept="image/*" (change)="onAvatarChange($event)" hidden>
-          </label>
-        </div>
-        <p class="avatar-name">{{ form.name || user?.name }}</p>
-        <p class="avatar-mail">{{ form.mail || user?.mail }}</p>
-      </div>
+      <!-- Aside -->
+      <aside class="col-12 col-md-4 col-lg-3">
 
-      <div class="stats-block">
-        <div class="stat-chip">
-          <span class="stat-value">{{ searchCount }}</span>
-          <span class="stat-label">Búsquedas</span>
-        </div>
-        <div class="stat-chip">
-          <span class="stat-value">{{ savedRoutesCount }}</span>
-          <span class="stat-label">Rutas</span>
-        </div>
-        <div class="stat-chip eco">
-          <span class="stat-value">{{ ecoScore }}</span>
-          <span class="stat-label">Eco Score</span>
-        </div>
-      </div>
+        <div class="card shadow-sm border-0 mb-3 text-center">
+          <div class="card-body">
+            <div class="position-relative d-inline-block mb-2">
+              <span class="rounded-circle bg-success text-eco-dark fw-bold d-inline-flex align-items-center justify-content-center"
+                    style="width: 88px; height: 88px; font-size: 2rem;"
+                    *ngIf="!avatarPreview">
+                {{ userInitials }}
+              </span>
+              <img *ngIf="avatarPreview"
+                   [src]="avatarPreview"
+                   class="rounded-circle"
+                   style="width: 88px; height: 88px; object-fit: cover;"
+                   alt="Foto de perfil">
 
-      <nav class="aside-menu">
-        <button class="aside-btn" [class.active]="activeSection === 'personal'" (click)="activeSection = 'personal'">
-          <img src="assets/Icons/icon-user.png" class="menu-icon-img" alt="">
-          Datos personales
-        </button>
-        <button class="aside-btn" [class.active]="activeSection === 'seguridad'" (click)="activeSection = 'seguridad'">
-          <img src="assets/Icons/icon-lock.png" class="menu-icon-img" alt="">
-          Seguridad
-        </button>
-        <button class="aside-btn" [class.active]="activeSection === 'vehiculos'" (click)="activeSection = 'vehiculos'">
-          <img src="assets/Icons/car-icon.png" class="menu-icon-img" alt="">
-          Mis vehículos
-        </button>
-        <button class="aside-btn" [class.active]="activeSection === 'preferencias'" (click)="activeSection = 'preferencias'">
-          <img src="assets/Icons/gear-icon.png" class="menu-icon-img" alt="">
-          Preferencias
-        </button>
-      </nav>
-    </aside>
+              <label class="btn btn-sm btn-success rounded-circle position-absolute bottom-0 end-0"
+                     style="width: 30px; height: 30px; padding: 0;">
+                <img src="assets/Icons/camera-icon.png" class="icon-sm" alt="">
+                <input type="file" accept="image/*" (change)="onAvatarChange($event)" hidden>
+              </label>
+            </div>
 
-    <main class="profile-main">
-      <section class="form-card" *ngIf="activeSection === 'personal'">
-        <div class="form-card-header">
-          <div class="header-icon personal">
-            <img src="assets/Icons/icon-user.png" class="header-icon-img" alt="">
-          </div>
-          <div>
-            <h2>Datos personales</h2>
-            <p>Actualiza tu información de perfil</p>
+            <p class="fw-bold mb-0">{{ form.name || user?.name }}</p>
+            <small class="text-muted">{{ form.mail || user?.mail }}</small>
           </div>
         </div>
 
-        <div class="form-grid">
-          <div class="field-group full">
-            <label>Nombre completo</label>
-            <div class="input-wrap">
-              <img src="assets/Icons/user-input.png" class="input-icon-img" alt="">
-              <input type="text" [(ngModel)]="form.name" placeholder="Tu nombre">
+        <div class="row g-2 mb-3 text-center">
+          <div class="col-4">
+            <div class="card border-0 bg-white shadow-sm">
+              <div class="card-body p-2">
+                <div class="fw-bold fs-6 text-eco-dark">{{ searchCount }}</div>
+                <small class="text-muted small">Búsquedas</small>
+              </div>
             </div>
           </div>
-
-          <div class="field-group">
-            <label>Correo electrónico</label>
-            <div class="input-wrap">
-              <img src="assets/Icons/icon-mail.png" class="input-icon-img" alt="">
-              <input type="email" [(ngModel)]="form.mail" placeholder="tu@email.com">
+          <div class="col-4">
+            <div class="card border-0 bg-white shadow-sm">
+              <div class="card-body p-2">
+                <div class="fw-bold fs-6 text-eco-dark">{{ savedRoutesCount }}</div>
+                <small class="text-muted small">Rutas</small>
+              </div>
             </div>
           </div>
-
-          <div class="field-group">
-            <label>Teléfono</label>
-            <div class="input-wrap">
-              <img src="assets/Icons/phone-icon.png" class="input-icon-img" alt="">
-              <input type="tel" [(ngModel)]="form.phone" placeholder="+34 000 000 000">
-            </div>
-          </div>
-
-          <div class="field-group">
-            <label>Ciudad</label>
-            <div class="input-wrap">
-              <img src="assets/Icons/pin-icon.png" class="input-icon-img" alt="">
-              <input type="text" [(ngModel)]="form.city" placeholder="Madrid">
-            </div>
-          </div>
-
-          <div class="field-group full">
-            <label>Bio <span class="optional">opcional</span></label>
-            <div class="input-wrap textarea-wrap">
-              <img src="assets/Icons/text-align-left.png" class="input-icon-img" alt="">
-              <textarea [(ngModel)]="form.bio" placeholder="Cuéntanos algo sobre ti..." rows="3"></textarea>
+          <div class="col-4">
+            <div class="card border-0 shadow-sm" style="background: #d1fae5;">
+              <div class="card-body p-2">
+                <div class="fw-bold fs-6" style="color: #065f46;">{{ ecoScore }}</div>
+                <small class="text-muted small">Eco</small>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="form-actions">
-          <button class="btn-cancel" (click)="resetForm()">Descartar cambios</button>
-          <button class="btn-save" (click)="saveProfile()" [class.loading]="saving">
-            <img *ngIf="!saving" src="assets/Icons/check-icon.png" class="btn-icon-img" alt="">
-            <span class="spinner" *ngIf="saving"></span>
-            {{ saving ? 'Guardando...' : 'Guardar cambios' }}
+        <div class="list-group">
+          <button class="list-group-item list-group-item-action d-flex align-items-center gap-2"
+                  [class.active]="activeSection === 'personal'"
+                  (click)="activeSection = 'personal'">
+            <img src="assets/Icons/Icon-User.png" class="icon-sm" alt=""> Datos personales
+          </button>
+          <button class="list-group-item list-group-item-action d-flex align-items-center gap-2"
+                  [class.active]="activeSection === 'vehiculos'"
+                  (click)="activeSection = 'vehiculos'">
+            <img src="assets/Icons/car-icon.png" class="icon-sm" alt=""> Mis vehículos
+          </button>
+          <button class="list-group-item list-group-item-action d-flex align-items-center gap-2"
+                  [class.active]="activeSection === 'preferencias'"
+                  (click)="activeSection = 'preferencias'">
+            <img src="assets/Icons/gear-icon.png" class="icon-sm" alt=""> Preferencias
           </button>
         </div>
-      </section>
-      
+      </aside>
+
+      <!-- Main -->
+      <main class="col-12 col-md-8 col-lg-9">
+
+        <section class="card shadow-sm border-0" *ngIf="activeSection === 'personal'">
+          <div class="card-body">
+            <h2 class="h4 fw-bold text-eco-dark mb-1">Datos personales</h2>
+            <p class="text-muted small mb-4">Actualiza tu información de perfil.</p>
+
+            <div class="alert alert-success py-2 small" *ngIf="saveSuccess">
+              Cambios guardados correctamente.
+            </div>
+            <div class="alert alert-danger py-2 small" *ngIf="saveError">
+              {{ saveError }}
+            </div>
+
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label small fw-semibold">Nombre completo</label>
+                <input type="text" class="form-control" [(ngModel)]="form.name" placeholder="Tu nombre">
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small fw-semibold">Email</label>
+                <input type="email" class="form-control" [(ngModel)]="form.mail" placeholder="tu@email.com">
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small fw-semibold">Teléfono</label>
+                <input type="tel" class="form-control" [(ngModel)]="form.phone" placeholder="+34 000 000 000">
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small fw-semibold">Ciudad</label>
+                <input type="text" class="form-control" [(ngModel)]="form.city" placeholder="Madrid">
+              </div>
+              <div class="col-12">
+                <label class="form-label small fw-semibold">Bio <span class="text-muted">(opcional)</span></label>
+                <textarea class="form-control" rows="3" [(ngModel)]="form.bio"
+                          placeholder="Cuéntanos algo sobre ti..."></textarea>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-3">
+              <button class="btn btn-outline-secondary" (click)="resetForm()">Descartar</button>
+              <button class="btn btn-success" (click)="saveProfile()" [disabled]="saving">
+                {{ saving ? 'Guardando...' : 'Guardar cambios' }}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="card shadow-sm border-0" *ngIf="activeSection === 'vehiculos'">
+          <div class="card-body">
+            <h2 class="h4 fw-bold text-eco-dark mb-1">Mis vehículos</h2>
+            <p class="text-muted small mb-3">Gestiona aquí tus coches.</p>
+
+            <div class="alert alert-danger py-2 small" *ngIf="vehicleError">
+              {{ vehicleError }}
+            </div>
+
+            <a routerLink="/vehicles" class="btn btn-success">Ir a Mis vehículos</a>
+          </div>
+        </section>
+
+        <section class="card shadow-sm border-0" *ngIf="activeSection === 'preferencias'">
+          <div class="card-body">
+            <h2 class="h4 fw-bold text-eco-dark mb-1">Preferencias</h2>
+            <p class="text-muted small mb-3">Personaliza tu experiencia.</p>
+
+            <div class="form-check form-switch mb-2">
+              <input class="form-check-input" type="checkbox" id="pref-email" [(ngModel)]="prefs.emailNotifications">
+              <label class="form-check-label" for="pref-email">Notificaciones por email</label>
+            </div>
+            <div class="form-check form-switch mb-2">
+              <input class="form-check-input" type="checkbox" id="pref-eco" [(ngModel)]="prefs.ecoRoutes">
+              <label class="form-check-label" for="pref-eco">Priorizar rutas ecológicas</label>
+            </div>
+            <div class="form-check form-switch mb-2">
+              <input class="form-check-input" type="checkbox" id="pref-live" [(ngModel)]="prefs.liveTraffic">
+              <label class="form-check-label" for="pref-live">Tráfico en tiempo real</label>
+            </div>
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="pref-history" [(ngModel)]="prefs.saveHistory">
+              <label class="form-check-label" for="pref-history">Guardar historial de rutas</label>
+            </div>
+
+            <button class="btn btn-success" (click)="savePrefs()">Guardar preferencias</button>
+          </div>
+        </section>
+
       </main>
+    </div>
   </div>
 </div>

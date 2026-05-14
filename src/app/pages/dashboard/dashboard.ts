@@ -8,7 +8,7 @@ import { AuthService } from '../../core/services/auth';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './dashboard.html',
-  styleUrls: ['./dashboard.css']
+  styleUrls: ['./dashboard.scss']
 })
 export class DashboardComponent implements OnInit {
   private router = inject(Router);
@@ -19,6 +19,10 @@ export class DashboardComponent implements OnInit {
   errorMessage = '';
 
   ngOnInit(): void {
+    this.cargarDashboard();
+  }
+
+  private cargarDashboard(): void {
     this.authService.getAdminDashboard().subscribe({
       next: (res: any) => {
         this.dashboard = res;

@@ -22,23 +22,34 @@ export class RegisterComponent {
   loading = false;
 
   constructor() {
-    this.registerForm = this.fb.group({
-      nombre: ['', [Validators.required, Validators.maxLength(100)]],
-      email: ['', [Validators.required, Validators.email, Validators.maxLength(100)]],
-      password: ['', [Validators.required, Validators.minLength(8)]],
-      confirmPassword: ['', Validators.required]
-    }, { validators: this.passwordMatchValidator });
+    this.registerForm = this.fb.group(
+      {
+        nombre: ['', [Validators.required, Validators.maxLength(100)]],
+        email: ['', [Validators.required, Validators.email, Validators.maxLength(100)]],
+        password: ['', [Validators.required, Validators.minLength(8)]],
+        confirmPassword: ['', Validators.required]
+      },
+      { validators: this.passwordMatchValidator }
+    );
   }
 
+  /**
+   * Validador a nivel de formulario: comprueba que ambas contraseñas coincidan.
+   * Devuelve null si coinciden, o el error 'mismatch' si no.
+   * (Sin return dentro de if: usamos un ternario al final.)
+   */
   passwordMatchValidator(form: FormGroup) {
     const password = form.get('password')?.value;
     const confirmPassword = form.get('confirmPassword')?.value;
 
-    if (password === confirmPassword) {
-      return null;
-    }
+    const coinciden = password === confirmPassword;
+    return coinciden ? null : { mismatch: true };
+  }
 
-    return { mismatch: true };
+  /** Helper para el template: marca un campo como inválido si está tocado. */
+  esInvalido(nombreCampo: string): boolean {
+    const campo = this.registerForm.get(nombreCampo);
+    return !!campo && campo.invalid && campo.touched;
   }
 
   onSubmit(): void {
@@ -48,9 +59,12 @@ export class RegisterComponent {
     if (this.registerForm.invalid) {
       this.registerForm.markAllAsTouched();
       this.errorMessage = 'Revisa los campos del formulario.';
-      return;
+    } else {
+      this.enviarRegistro();
     }
+  }
 
+  private enviarRegistro(): void {
     const formValue = this.registerForm.value;
 
     const payload = {
@@ -70,15 +84,25 @@ export class RegisterComponent {
       },
       error: (err: any) => {
         this.loading = false;
-
-        if (err.status === 422) {
-          this.errorMessage = 'El email ya existe o hay algún dato incorrecto.';
-          return;
-        }
-
-        this.errorMessage = 'No se pudo crear la cuenta. Revisa el backend.';
+        this.errorMessage = this.traducirErrorRegistro(err);
         console.error('Error registrando usuario:', err);
       }
     });
+  }
+
+  /**
+   * Traduce el error HTTP en un mensaje amigable.
+   * if/else if/else encadenados, sin returns intermedios.
+   */
+  private traducirErrorRegistro(err: any): string {
+    let mensaje = 'No se pudo crear la cuenta. Revisa el backend.';
+
+    if (err?.status === 422) {
+      mensaje = 'El email ya existe o hay algún dato incorrecto.';
+    } else if (err?.status === 0) {
+      mensaje = 'No se puede contactar con el servidor.';
+    }
+
+    return mensaje;
   }
 }

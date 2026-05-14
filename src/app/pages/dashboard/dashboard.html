@@ -1,40 +1,95 @@
-<div style="padding: 2rem;">
-  <h1>Panel de administración</h1>
-  <p>Resumen general de usuarios e incidencias de EcoTraffic.</p>
+<!--
+  Admin Dashboard - EcoTraffic
+  Versión base con Bootstrap.
+  En la siguiente fase añadiremos gráficos con Chart.js + ng2-charts.
+-->
+<div class="d-flex flex-column vh-100">
 
-  <hr>
+  <!-- Navbar -->
+  <nav class="navbar navbar-dark bg-eco-dark px-3">
+    <span class="navbar-brand logo-eco text-white fs-5 mb-0">
+      ECO<span>TRAFFIC</span>
+      <small class="ms-2 badge bg-warning text-dark">ADMIN</small>
+    </span>
+    <button class="btn btn-sm btn-outline-light" (click)="logout()">
+      Cerrar sesión
+    </button>
+  </nav>
 
-  <p *ngIf="loading">Cargando datos...</p>
-  <p *ngIf="errorMessage" style="color: red;">{{ errorMessage }}</p>
+  <!-- Contenido -->
+  <main class="flex-grow-1 overflow-auto bg-light p-3 p-md-4">
+    <div class="container-fluid">
 
-  <div *ngIf="dashboard && !loading" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1.5rem;">
-    <article style="padding: 1rem; border: 1px solid #ddd; border-radius: 12px;">
-      <h2>{{ dashboard.users_total }}</h2>
-      <p>Usuarios totales</p>
-    </article>
+      <div class="mb-4">
+        <h1 class="h3 fw-bold text-eco-dark mb-1">Panel de administración</h1>
+        <p class="text-muted mb-0">
+          Resumen general de usuarios e incidencias de EcoTraffic.
+        </p>
+      </div>
 
-    <article style="padding: 1rem; border: 1px solid #ddd; border-radius: 12px;">
-      <h2>{{ dashboard.users_active }}</h2>
-      <p>Usuarios activos</p>
-    </article>
+      <!-- Estado de carga -->
+      <div class="text-center py-5" *ngIf="loading">
+        <div class="spinner-border text-success" role="status"></div>
+        <p class="text-muted mt-2 mb-0">Cargando datos...</p>
+      </div>
 
-    <article style="padding: 1rem; border: 1px solid #ddd; border-radius: 12px;">
-      <h2>{{ dashboard.users_inactive }}</h2>
-      <p>Usuarios inactivos</p>
-    </article>
+      <!-- Error -->
+      <div class="alert alert-danger" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
 
-    <article style="padding: 1rem; border: 1px solid #ddd; border-radius: 12px;">
-      <h2>{{ dashboard.incidents_total }}</h2>
-      <p>Incidencias totales</p>
-    </article>
+      <!-- Tarjetas de métricas -->
+      <div class="row g-3" *ngIf="dashboard && !loading">
 
-    <article style="padding: 1rem; border: 1px solid #ddd; border-radius: 12px;">
-      <h2>{{ dashboard.incidents_active }}</h2>
-      <p>Incidencias activas</p>
-    </article>
-  </div>
+        <div class="col-12 col-sm-6 col-lg-3">
+          <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+              <p class="text-muted small mb-1 text-uppercase">Usuarios totales</p>
+              <h2 class="fw-bold text-eco-dark mb-0">{{ dashboard.users_total }}</h2>
+            </div>
+          </div>
+        </div>
 
-  <button (click)="logout()" style="padding: 10px; cursor: pointer; margin-top: 2rem;">
-    Cerrar sesión
-  </button>
+        <div class="col-12 col-sm-6 col-lg-3">
+          <div class="card shadow-sm border-0 h-100 bg-success bg-opacity-10">
+            <div class="card-body">
+              <p class="text-muted small mb-1 text-uppercase">Usuarios activos</p>
+              <h2 class="fw-bold text-success mb-0">{{ dashboard.users_active }}</h2>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3">
+          <div class="card shadow-sm border-0 h-100 bg-secondary bg-opacity-10">
+            <div class="card-body">
+              <p class="text-muted small mb-1 text-uppercase">Usuarios inactivos</p>
+              <h2 class="fw-bold text-secondary mb-0">{{ dashboard.users_inactive }}</h2>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3">
+          <div class="card shadow-sm border-0 h-100 bg-warning bg-opacity-10">
+            <div class="card-body">
+              <p class="text-muted small mb-1 text-uppercase">Incidencias activas</p>
+              <h2 class="fw-bold text-warning mb-0">{{ dashboard.incidents_active }}</h2>
+              <small class="text-muted">
+                Total: {{ dashboard.incidents_total }}
+              </small>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Marcador para los gráficos (Fase 2) -->
+      <div class="card border-0 shadow-sm mt-4">
+        <div class="card-body text-center text-muted py-5">
+          <p class="mb-1 fw-bold">Gráficos próximamente</p>
+          <small>En la siguiente fase añadiremos gráficos con Chart.js (usuarios activos/inactivos, incidencias por tipo, rutas por día).</small>
+        </div>
+      </div>
+
+    </div>
+  </main>
 </div>

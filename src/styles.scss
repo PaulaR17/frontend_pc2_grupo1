@@ -1,71 +1,57 @@
-// ─── BOOTSTRAP CUSTOMIZATION ────────────────────────────────
-$primary-dark: #1b261e;
-$accent-green: #4ade80;
-$white: #ffffff;
-$border-light: #dadce0;
-$bg-light: #f8fafc;
+// ============================================================
+//  EcoTraffic - Estilos globales
+//  Base: Bootstrap 5 (clases nativas) + variables overrideadas
+// ============================================================
 
-// Override Bootstrap defaults
-$primary: $primary-dark;
-$success: $accent-green;
-$light: #f1f5f0;
-$gray-200: #e5e7eb;
-$gray-300: $border-light;
-$gray-600: #4b5563;
-$border-radius: 12px;
-$border-radius-lg: 20px;
+// 1. Variables propias para reutilizar
+$ecotraffic-dark:   #1b261e;   // verde muy oscuro (navbar, hero)
+$ecotraffic-green:  #4ade80;   // verde acento
+$ecotraffic-bg:     #f8fafc;   // fondo claro
+$ecotraffic-text:   #1a1a1a;
 
-// Import Bootstrap
+// 2. Override de variables de Bootstrap ANTES del import
+$primary:        $ecotraffic-dark;
+$success:        $ecotraffic-green;
+$body-bg:        $ecotraffic-bg;
+$body-color:     $ecotraffic-text;
+$border-radius:        12px;
+$border-radius-sm:     8px;
+$border-radius-lg:     20px;
+$font-family-sans-serif: 'Segoe UI', Roboto, "Helvetica Neue", Arial, sans-serif;
+
+// 3. Bootstrap 5 completo
 @import "bootstrap/scss/bootstrap";
 
-// ─── CUSTOM VARIABLES ───────────────────────────────────────
+// 4. Leaflet (para los mapas)
 @import "leaflet/dist/leaflet.css";
-:root {
-  /* Light Mode */
-  --bg-primary: #FFFFFF;    
-  --bg-secondary: #F8F9FA;  
-  --text-main: #212529;     
-  --accent: #4ade80;        
-  --warning: #FFC107;      
-  --border: #DEE2E6;        
-  --primary-dark: #1b261e;
-  --accent-green: #4ade80;
-}
 
-[data-theme='dark'] {
-  /* Dark Mode */
-  --bg-primary: #1A1D20;    
-  --bg-secondary: #2B3035;  
-  --text-main: #F8F9FA;     
-  --accent: #4ade80;        
-  --warning: #FFCA2C;      
-  --border: #495057;        
-}
-
-// ─── GLOBAL RESETS ──────────────────────────────────────────
+// 5. Resets globales
 html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  font-family: 'Segoe UI', Roboto, sans-serif;
 }
 
-// ─── IMAGE CONTROLS ─────────────────────────────────────────
-.nav-icon-img, 
-.dropdown-icon-img, 
-.menu-icon-img, 
-.toggle-icon-img, 
-.field-icon,
-.edit-icon-img,
-.pin-icon-img,
-.search-icon-img,
-.go-icon-img,
-.badge-icon-img,
-.btn-icon-img {
+// 6. Pequeñas utilidades propias de EcoTraffic
+.text-eco-dark   { color: $ecotraffic-dark !important; }
+.text-eco-green  { color: $ecotraffic-green !important; }
+.bg-eco-dark     { background-color: $ecotraffic-dark !important; }
+.bg-eco-green    { background-color: $ecotraffic-green !important; }
+
+// Logo "ECOTRAFFIC" con el "TRAFFIC" en verde
+.logo-eco {
+  font-weight: 800;
+  color: $ecotraffic-text;
+  letter-spacing: .5px;
+
+  span {
+    color: $ecotraffic-green;
+  }
+}
+
+// Iconos pequeños dentro de botones / inputs
+.icon-sm {
   width: 18px;
   height: 18px;
   object-fit: contain;
-  flex-shrink: 0;
-  display: inline-block;
-  vertical-align: middle;
 }

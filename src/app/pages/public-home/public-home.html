@@ -1,99 +1,155 @@
-<div class="main-wrapper">
-  <nav class="top-nav">
-    <div class="logo">ECO<span>TRAFFIC</span></div>
-    <div class="nav-buttons">
-      <button class="btn-navbar btn-navbar-outline" routerLink="/register">Registrarse</button>
-      <button class="btn-navbar btn-navbar-filled" routerLink="/login">Iniciar Sesión</button>
+<!--
+  Public Home - EcoTraffic
+  Estructura:
+    - Navbar superior (Bootstrap navbar)
+    - Layout vertical:
+        * Móvil  (col-12): panel arriba, mapa abajo
+        * Tablet+(col-md-4 / col-md-8): panel a la izquierda, mapa a la derecha
+-->
+<div class="d-flex flex-column vh-100">
+
+  <!-- ===================== NAVBAR ===================== -->
+  <nav class="navbar navbar-dark bg-eco-dark px-3">
+    <span class="navbar-brand logo-eco text-white fs-5 mb-0">
+      ECO<span>TRAFFIC</span>
+    </span>
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-light btn-sm rounded-pill px-3"
+              routerLink="/register">
+        Registrarse
+      </button>
+      <button class="btn btn-success btn-sm rounded-pill px-3"
+              routerLink="/login">
+        Iniciar sesión
+      </button>
     </div>
   </nav>
 
-  <div class="dashboard-container">
-    <aside class="info-panel">
-      <div class="search-wrapper">
-        <div class="search-card">
-          <img src="assets/Icons/search-icon.png" class="search-icon-img" alt="Buscar">
+  <!-- ===================== CONTENIDO ===================== -->
+  <div class="container-fluid flex-grow-1 overflow-hidden p-0">
+    <div class="row g-0 h-100">
 
-          <input
-            type="text"
-            [(ngModel)]="searchQuery"
-            (input)="onSearchInput()"
-            (focus)="onSearchFocus()"
-            (keyup.enter)="onSearch()"
-            placeholder="Busca una zona en Madrid...">
+      <!-- =================== PANEL LATERAL =================== -->
+      <aside class="col-12 col-md-4 col-lg-3 bg-white border-end overflow-auto p-3">
 
-          <button class="btn-go" (click)="onSearch()" [disabled]="loadingRoute">
-            <img src="assets/Icons/go-icon.png" class="go-icon-img" alt="Ir">
-          </button>
+        <!-- Tarjeta de búsqueda -->
+        <div class="card shadow-sm border-0 mb-3">
+          <div class="card-body p-2">
+
+            <div class="input-group">
+              <span class="input-group-text bg-white border-end-0">
+                <img src="assets/Icons/search-icon.png" class="icon-sm" alt="">
+              </span>
+
+              <input type="text"
+                     class="form-control border-start-0"
+                     [(ngModel)]="searchQuery"
+                     (input)="onSearchInput()"
+                     (focus)="onSearchFocus()"
+                     (keyup.enter)="onSearch()"
+                     placeholder="Busca una zona en Madrid...">
+
+              <button class="btn btn-success"
+                      type="button"
+                      (click)="onSearch()"
+                      [disabled]="loadingRoute">
+                <img src="assets/Icons/go-icon.png" class="icon-sm" alt="Ir">
+              </button>
+            </div>
+
+            <!-- Aviso (success / error / warning) usando alerts de Bootstrap -->
+            <div class="alert py-2 px-3 mt-2 mb-0 small"
+                 *ngIf="notificationMessage"
+                 [class.alert-success]="notificationType === 'success'"
+                 [class.alert-danger]="notificationType === 'error'"
+                 [class.alert-warning]="notificationType === 'warning'">
+              {{ notificationMessage }}
+            </div>
+
+            <!-- Cuota de búsquedas -->
+            <div class="text-eco-dark fw-semibold small mt-2">
+              Búsquedas restantes: {{ remainingSearches }} / {{ maxSearches }}
+            </div>
+          </div>
         </div>
 
-        <div
-          class="home-notification"
-          *ngIf="notificationMessage"
-          [class.success]="notificationType === 'success'"
-          [class.error]="notificationType === 'error'"
-          [class.warning]="notificationType === 'warning'">
-          {{ notificationMessage }}
-        </div>
+        <!-- Sugerencias de ubicación -->
+        <ul class="list-group mb-3" *ngIf="mostrarSugerencias">
 
-        <div class="quota-info">
-          Búsquedas restantes: {{ remainingSearches }} / {{ maxSearches }}
-        </div>
-
-        <ul class="suggestions-list" *ngIf="mostrarSugerencias">
-          <li *ngIf="loadingSuggestions" class="suggestion-title">
+          <li class="list-group-item text-muted small" *ngIf="loadingSuggestions">
             Buscando ubicaciones...
           </li>
 
-          <li
-            *ngFor="let suggestion of locationSuggestions"
-            (click)="selectSuggestion(suggestion)"
-            class="suggestion-item">
-            <img src="assets/Icons/pin-icon.png" class="pin-icon-img" alt="Ubicación">
-
-            <div class="suggestion-content">
-              <strong>{{ getSuggestionTitle(suggestion) }}</strong>
-            <small>{{ getSuggestionSubtitle(suggestion) }}</small>
+          <li class="list-group-item list-group-item-action d-flex gap-2"
+              *ngFor="let suggestion of locationSuggestions"
+              (click)="selectSuggestion(suggestion)"
+              style="cursor: pointer;">
+            <img src="assets/Icons/pin-icon.png" class="icon-sm flex-shrink-0 mt-1" alt="">
+            <div class="text-truncate">
+              <strong class="d-block text-truncate">{{ getSuggestionTitle(suggestion) }}</strong>
+              <small class="text-muted text-truncate d-block">{{ getSuggestionSubtitle(suggestion) }}</small>
             </div>
           </li>
 
-          <li
-            *ngIf="!loadingSuggestions && locationSuggestions.length === 0"
-            class="suggestion-title">
+          <li class="list-group-item text-muted small"
+              *ngIf="!loadingSuggestions && locationSuggestions.length === 0">
             No hay sugerencias disponibles
           </li>
         </ul>
-      </div>
 
-      <div class="menu-items">
-        <button class="menu-btn active">Inicio</button>
+        <!-- Botones de menú + mascota -->
+        <button class="btn btn-success w-100 mb-2">Inicio</button>
 
-        <div class="mascota-container">
-          <img src="assets/Pet/NoUserPet.png" alt="Mascota" (error)="$any($event.target).style.display='none'">
+        <div class="text-center mb-2">
+          <img src="assets/Pet/NoUserPet.png"
+               alt="Mascota"
+               class="img-fluid"
+               style="max-height: 180px;"
+               (error)="$any($event.target).style.display='none'">
         </div>
 
-        <button class="menu-btn outline">Ayuda / Dudas</button>
-      </div>
-    </aside>
+        <button class="btn btn-outline-dark w-100">Ayuda / Dudas</button>
+      </aside>
 
-    <main class="map-section">
-      <div id="map" class="map-viewport"></div>
+      <!-- =================== MAPA =================== -->
+      <main class="col-12 col-md-8 col-lg-9 position-relative">
+        <div id="map" class="w-100 h-100"></div>
 
-      <div class="route-loading" *ngIf="loadingRoute">
-        Calculando ruta...
-      </div>
+        <!-- Indicador "Calculando ruta..." -->
+        <div class="position-absolute top-0 end-0 m-3 bg-white shadow rounded-3 px-3 py-2 fw-semibold small"
+             *ngIf="loadingRoute"
+             style="z-index: 1000;">
+          Calculando ruta...
+        </div>
 
-      <div class="limit-overlay" *ngIf="showLimitModal">
-        <div class="limit-card">
-          <h3>Límite de búsquedas alcanzado</h3>
-          <p>Has realizado {{ searchCount }} búsquedas. Para seguir explorando, por favor regístrate.</p>
+        <!-- Modal de límite de búsquedas (usamos un overlay simple, sin JS de BS) -->
+        <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+             *ngIf="showLimitModal"
+             style="background: rgba(0,0,0,0.5); z-index: 1500; backdrop-filter: blur(4px);">
 
-          <div class="modal-actions">
-            <button class="btn-filled" routerLink="/register">Registrarse gratis</button>
-            <button class="btn-outline" routerLink="/login">Iniciar sesión</button>
-            <button class="btn-close" (click)="showLimitModal = false"></button>
+          <div class="card border-0 shadow-lg text-center" style="max-width: 420px;">
+            <div class="card-body p-4">
+              <h5 class="text-eco-dark fw-bold mb-2">Límite de búsquedas alcanzado</h5>
+              <p class="text-muted small mb-3">
+                Has realizado {{ searchCount }} búsquedas.
+                Para seguir explorando, por favor regístrate.
+              </p>
+
+              <div class="d-grid gap-2">
+                <button class="btn btn-success" routerLink="/register">Registrarse gratis</button>
+                <button class="btn btn-outline-dark" routerLink="/login">Iniciar sesión</button>
+                <button class="btn btn-link text-muted btn-sm"
+                        type="button"
+                        (click)="showLimitModal = false">
+                  Cerrar
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </main>
+      </main>
+
+    </div>
   </div>
 </div>

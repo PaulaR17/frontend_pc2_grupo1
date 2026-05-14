@@ -1,444 +1,264 @@
-<div class="main-wrapper">
-  <nav class="top-nav">
-    <div class="logo">ECO<span>TRAFFIC</span></div>
+<!--
+  Vehicles - EcoTraffic
+  Layout:
+    - Navbar arriba
+    - Contenido: tarjetas de vehículos en grid responsive
+    - Modal Bootstrap para crear / editar vehículo
+-->
+<div class="d-flex flex-column vh-100">
 
-    <div class="nav-actions">
-      <div class="user-pill" (click)="toggleUserMenu()" [class.open]="userMenuOpen">
-        <div class="user-avatar">{{ userInitials }}</div>
-        <span class="user-name-nav">{{ user?.name }}</span>
-        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
-      </div>
+  <!-- ===================== NAVBAR ===================== -->
+  <nav class="navbar navbar-dark bg-eco-dark px-3 position-relative">
+    <a routerLink="/user-home" class="navbar-brand logo-eco text-white fs-5 mb-0 text-decoration-none">
+      ECO<span>TRAFFIC</span>
+    </a>
 
-      <div class="user-dropdown" *ngIf="userMenuOpen">
-        <a class="dropdown-item" routerLink="/profile">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
-          </svg>
-          Mi Perfil
-        </a>
+    <div class="position-relative">
+      <button class="btn btn-sm rounded-pill d-flex align-items-center gap-2 text-white border-0"
+              style="background: rgba(255,255,255,0.1);"
+              (click)="toggleUserMenu()">
+        <span class="rounded-circle bg-success text-eco-dark fw-bold d-inline-flex align-items-center justify-content-center"
+              style="width: 32px; height: 32px;">
+          {{ userInitials }}
+        </span>
+        <span class="d-none d-sm-inline fw-semibold">{{ user?.name }}</span>
+      </button>
 
-        <button class="dropdown-item danger" (click)="logout()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-          Cerrar Sesión
+      <ul class="list-group shadow position-absolute end-0 mt-2"
+          *ngIf="userMenuOpen"
+          style="min-width: 200px; z-index: 1100;">
+        <a class="list-group-item list-group-item-action" routerLink="/user-home">Inicio</a>
+        <a class="list-group-item list-group-item-action" routerLink="/profile">Mi perfil</a>
+        <button class="list-group-item list-group-item-action text-danger border-0"
+                (click)="logout()">
+          Cerrar sesión
         </button>
-      </div>
+      </ul>
     </div>
   </nav>
 
-  <div class="dashboard-container" [class.sidebar-collapsed]="!sidebarOpen">
-    <aside class="info-panel" [class.collapsed]="!sidebarOpen">
-      <button class="sidebar-toggle-tab" (click)="toggleSidebar()" [title]="sidebarOpen ? 'Colapsar panel' : 'Abrir panel'">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.5"
-          [style.transform]="sidebarOpen ? 'none' : 'rotate(180deg)'">
-          <polyline points="15 18 9 12 15 6"></polyline>
-        </svg>
-      </button>
+  <!-- ===================== CONTENIDO ===================== -->
+  <main class="flex-grow-1 overflow-auto bg-light p-3 p-md-4" (click)="closeAllMenus()">
+    <div class="container-fluid">
 
-      <div class="user-card">
-        <div class="user-card-avatar">{{ userInitials }}</div>
-
-        <div class="user-card-info">
-          <p class="user-card-name">{{ user?.name }}</p>
-          <p class="user-card-mail">{{ user?.mail }}</p>
-        </div>
-
-        <a routerLink="/profile" class="edit-profile-btn" title="Editar perfil">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-          </svg>
-          <span class="edit-label">Editar</span>
-        </a>
-      </div>
-
-      <div class="stats-row">
-        <div class="stat-chip">
-          <span class="stat-value">{{ searchCount }}</span>
-          <span class="stat-label">Búsquedas</span>
-        </div>
-
-        <div class="stat-chip">
-          <span class="stat-value">{{ savedRoutes.length }}</span>
-          <span class="stat-label">Rutas</span>
-        </div>
-
-        <div class="stat-chip eco">
-          <span class="stat-value">{{ ecoScore }}</span>
-          <span class="stat-label">Eco Score</span>
-        </div>
-      </div>
-
-      <div class="menu-items">
-        <button class="menu-btn" routerLink="/user-home">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-            <polyline points="9 22 9 12 15 12 15 22"/>
-          </svg>
-          Inicio
-        </button>
-
-        <button class="menu-btn" routerLink="/user-home">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="3" y1="12" x2="21" y2="12"/>
-            <line x1="3" y1="6" x2="21" y2="6"/>
-            <line x1="3" y1="18" x2="21" y2="18"/>
-          </svg>
-          Historial
-        </button>
-
-        <button class="menu-btn active">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="1" y="3" width="15" height="13" rx="2"/>
-            <path d="M16 8h4l3 3v5h-7V8z"/>
-            <circle cx="5.5" cy="18.5" r="2.5"/>
-            <circle cx="18.5" cy="18.5" r="2.5"/>
-          </svg>
-          Mis vehículos
-        </button>
-
-        <button class="menu-btn" routerLink="/user-home">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-          </svg>
-          Mi mascota
-        </button>
-
-        <button class="menu-btn" routerLink="/user-home">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-            <line x1="12" y1="17" x2="12.01" y2="17"/>
-          </svg>
-          Ayuda / Dudas
-        </button>
-      </div>
-
-      <div class="sidebar-vehicle-list" *ngIf="vehicles.length > 0">
-        <p class="section-label">Mis coches</p>
-
-        <div class="sidebar-vehicle-item" *ngFor="let v of vehicles">
-          <div class="sv-dot" [style.background]="v.colorHex"></div>
-
-          <div class="sv-info">
-            <span class="sv-name">{{ v.brand }} {{ v.model }}</span>
-            <span class="sv-year">{{ v.year }}</span>
-          </div>
-
-          <span class="sv-badge" [class]="'fuel-' + v.fuelType">
-            {{ fuelLabel(v.fuelType) }}
-          </span>
-        </div>
-      </div>
-    </aside>
-
-    <main class="vehicles-section" (click)="closeAllMenus()">
-      <div
-        class="vehicles-notification"
-        *ngIf="notificationMessage"
-        [class.success]="notificationType === 'success'"
-        [class.error]="notificationType === 'error'"
-        [class.warning]="notificationType === 'warning'">
+      <!-- Notificaciones -->
+      <div class="alert py-2 small"
+           *ngIf="notificationMessage"
+           [class.alert-success]="notificationType === 'success'"
+           [class.alert-danger]="notificationType === 'error'"
+           [class.alert-warning]="notificationType === 'warning'">
         {{ notificationMessage }}
       </div>
 
-      <div class="vehicles-loading" *ngIf="loading">
-        Cargando vehículos...
+      <!-- Spinner mientras carga -->
+      <div class="text-center py-5" *ngIf="loading">
+        <div class="spinner-border text-success" role="status"></div>
+        <p class="text-muted mt-2 mb-0">Cargando vehículos...</p>
       </div>
 
-      <div class="vehicles-header">
-        <div class="vehicles-title-block">
-          <h1 class="vehicles-title">VEHÍCULOS</h1>
-          <span class="vehicles-subtitle">Gestiona tus vehículos aquí</span>
+      <!-- Header -->
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+          <h1 class="h3 fw-bold text-eco-dark mb-0">Mis vehículos</h1>
+          <small class="text-muted">Gestiona aquí tus coches.</small>
         </div>
 
-        <button class="add-vehicle-btn" (click)="openAddModal($event)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          Añadir coche
+        <button class="btn btn-success d-flex align-items-center gap-2"
+                (click)="openAddModal($event)">
+          <span class="fs-5 lh-1">+</span> Añadir coche
         </button>
       </div>
 
-      <div class="filter-bar">
-        <button class="filter-chip" [class.active]="activeFilter === 'all'" (click)="setFilter('all')">
-          Todos
-        </button>
+      <!-- Filtros -->
+      <div class="d-flex gap-2 mb-3 flex-wrap">
+        <button class="btn btn-sm"
+                [class.btn-success]="activeFilter === 'all'"
+                [class.btn-outline-secondary]="activeFilter !== 'all'"
+                (click)="setFilter('all')">Todos</button>
 
-        <button class="filter-chip" [class.active]="activeFilter === 'electric'" (click)="setFilter('electric')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-          </svg>
-          Eléctrico
-        </button>
+        <button class="btn btn-sm"
+                [class.btn-success]="activeFilter === 'electric'"
+                [class.btn-outline-secondary]="activeFilter !== 'electric'"
+                (click)="setFilter('electric')">Eléctrico</button>
 
-        <button class="filter-chip" [class.active]="activeFilter === 'hybrid'" (click)="setFilter('hybrid')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2a10 10 0 1 0 10 10"/>
-            <path d="M12 6v6l4 2"/>
-          </svg>
-          Híbrido
-        </button>
+        <button class="btn btn-sm"
+                [class.btn-success]="activeFilter === 'hybrid'"
+                [class.btn-outline-secondary]="activeFilter !== 'hybrid'"
+                (click)="setFilter('hybrid')">Híbrido</button>
 
-        <button class="filter-chip" [class.active]="activeFilter === 'gasoline'" (click)="setFilter('gasoline')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 22V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/>
-            <path d="M17 12h1a2 2 0 0 1 2 2v3a1 1 0 0 0 2 0v-5l-3-3"/>
-            <line x1="3" y1="22" x2="21" y2="22"/>
-            <rect x="7" y="10" width="4" height="4"/>
-          </svg>
-          Gasolina
-        </button>
+        <button class="btn btn-sm"
+                [class.btn-success]="activeFilter === 'gasoline'"
+                [class.btn-outline-secondary]="activeFilter !== 'gasoline'"
+                (click)="setFilter('gasoline')">Gasolina</button>
 
-        <button class="filter-chip" [class.active]="activeFilter === 'diesel'" (click)="setFilter('diesel')">
-          Diésel
-        </button>
+        <button class="btn btn-sm"
+                [class.btn-success]="activeFilter === 'diesel'"
+                [class.btn-outline-secondary]="activeFilter !== 'diesel'"
+                (click)="setFilter('diesel')">Diésel</button>
       </div>
 
-      <div class="empty-state" *ngIf="filteredVehicles.length === 0 && !loading">
-        <div class="empty-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <rect x="1" y="3" width="15" height="13" rx="2"/>
-            <path d="M16 8h4l3 3v5h-7V8z"/>
-            <circle cx="5.5" cy="18.5" r="2.5"/>
-            <circle cx="18.5" cy="18.5" r="2.5"/>
-          </svg>
+      <!-- Empty state -->
+      <div class="card border-0 shadow-sm text-center py-5"
+           *ngIf="filteredVehicles.length === 0 && !loading">
+        <div class="card-body">
+          <p class="fw-bold mb-1">
+            {{ vehicles.length === 0 ? 'Aún no tienes vehículos' : 'Sin resultados para este filtro' }}
+          </p>
+          <small class="text-muted">
+            {{ vehicles.length === 0 ? 'Añade tu primer coche para empezar.' : 'Prueba con otro tipo de combustible.' }}
+          </small>
+          <div class="mt-3" *ngIf="vehicles.length === 0">
+            <button class="btn btn-success" (click)="openAddModal($event)">
+              Añadir mi primer coche
+            </button>
+          </div>
         </div>
-
-        <p class="empty-title">
-          {{ vehicles.length === 0 ? 'Aún no tienes vehículos' : 'Sin resultados para este filtro' }}
-        </p>
-
-        <p class="empty-sub">
-          {{ vehicles.length === 0 ? 'Añade tu primer coche para empezar.' : 'Prueba con otro tipo de combustible.' }}
-        </p>
-
-        <button class="add-vehicle-btn" (click)="openAddModal($event)" *ngIf="vehicles.length === 0">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          Añadir mi primer coche
-        </button>
       </div>
 
-      <div class="vehicles-grid" *ngIf="filteredVehicles.length > 0">
-        <div
-          class="vehicle-card"
-          *ngFor="let v of filteredVehicles; let i = index"
-          [style.animation-delay]="i * 60 + 'ms'">
+      <!-- Grid de vehículos -->
+      <div class="row g-3" *ngIf="filteredVehicles.length > 0">
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3"
+             *ngFor="let v of filteredVehicles">
 
-          <div class="card-accent" [style.background]="v.colorHex"></div>
+          <div class="card shadow-sm border-0 h-100 position-relative">
 
-          <div class="card-top">
-            <div class="car-icon-wrap">
-              <svg viewBox="0 0 48 24" fill="none" stroke="currentColor" stroke-width="1.8" class="car-svg">
-                <rect x="2" y="6" width="36" height="14" rx="3"/>
-                <path d="M8 6 L14 1 H30 L36 6"/>
-                <path d="M38 10 H44 L46 14 V20 H38 V10Z"/>
-                <circle cx="10" cy="20" r="3.5"/>
-                <circle cx="32" cy="20" r="3.5"/>
-                <circle cx="42" cy="20" r="3"/>
-              </svg>
-            </div>
+            <!-- Banda de color del coche -->
+            <div style="height: 6px; border-radius: .5rem .5rem 0 0;"
+                 [style.background]="v.colorHex"></div>
 
-            <div class="card-menu-trigger" (click)="toggleCardMenu(v, $event)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="5" r="1.2"/>
-                <circle cx="12" cy="12" r="1.2"/>
-                <circle cx="12" cy="19" r="1.2"/>
-              </svg>
-            </div>
+            <div class="card-body">
+              <!-- Menú de tres puntitos -->
+              <div class="position-absolute end-0 top-0 mt-2 me-2">
+                <button class="btn btn-sm btn-light"
+                        (click)="toggleCardMenu(v, $event)">⋮</button>
 
-            <div class="card-context-menu" *ngIf="v.menuOpen" (click)="$event.stopPropagation()">
-              <button (click)="editVehicle(v)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
-                Editar
-              </button>
+                <ul class="list-group shadow position-absolute end-0 mt-1"
+                    *ngIf="v.menuOpen"
+                    style="min-width: 160px; z-index: 1100;"
+                    (click)="$event.stopPropagation()">
+                  <button class="list-group-item list-group-item-action border-0"
+                          (click)="editVehicle(v)">Editar</button>
+                  <button class="list-group-item list-group-item-action border-0"
+                          *ngIf="!v.isDefault"
+                          (click)="setDefaultVehicle(v)">Predeterminado</button>
+                  <button class="list-group-item list-group-item-action border-0 text-danger"
+                          (click)="deleteVehicle(v)">Eliminar</button>
+                </ul>
+              </div>
 
-              <button *ngIf="!v.isDefault" (click)="setDefaultVehicle(v)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polygon points="12 2 15 9 22 9 17 14 19 21 12 17 5 21 7 14 2 9 9 9 12 2"/>
-                </svg>
-                Predeterminado
-              </button>
+              <h5 class="card-title text-eco-dark fw-bold mb-1">{{ v.brand }}</h5>
+              <p class="card-text text-muted mb-2">{{ v.model }}</p>
 
-              <button class="danger" (click)="deleteVehicle(v)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="3 6 5 6 21 6"/>
-                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                  <path d="M10 11v6"/>
-                  <path d="M14 11v6"/>
-                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                </svg>
-                Eliminar
-              </button>
-            </div>
-          </div>
+              <div class="d-flex flex-wrap gap-1 mb-2">
+                <span class="badge bg-secondary">{{ v.year }}</span>
+                <span class="badge bg-success">{{ fuelLabel(v.fuelType) }}</span>
+                <span class="badge bg-light text-dark" *ngIf="v.plate">{{ v.plate }}</span>
+                <span class="badge bg-warning text-dark" *ngIf="v.isDefault">Predeterminado</span>
+              </div>
 
-          <div class="card-body">
-            <div class="card-brand">{{ v.brand }}</div>
-            <div class="card-model">{{ v.model }}</div>
-
-            <div class="card-tags">
-              <span class="tag year-tag">{{ v.year }}</span>
-              <span class="tag fuel-tag" [class]="'fuel-' + v.fuelType">{{ fuelLabel(v.fuelType) }}</span>
-              <span class="tag plate-tag" *ngIf="v.plate">{{ v.plate }}</span>
-              <span class="tag default-tag" *ngIf="v.isDefault">Predeterminado</span>
-            </div>
-          </div>
-
-          <div class="card-footer">
-            <div class="color-swatch" [style.background]="v.colorHex" [title]="v.colorName"></div>
-            <span class="color-label">{{ v.colorName }}</span>
-
-            <div class="eco-mini" *ngIf="v.fuelType === 'electric' || v.fuelType === 'hybrid'">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-              </svg>
-              Eco
+              <div class="d-flex align-items-center gap-2 small text-muted">
+                <span class="rounded-circle border" style="width: 16px; height: 16px;"
+                      [style.background]="v.colorHex"></span>
+                {{ v.colorName }}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </main>
-  </div>
 
-  <button class="floating-toggle-btn" (click)="toggleSidebar()" [title]="sidebarOpen ? 'Cerrar panel' : 'Abrir panel'">
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2.5"
-      [style.transform]="sidebarOpen ? 'rotate(0deg)' : 'rotate(180deg)'">
-      <polyline points="15 18 9 12 15 6"></polyline>
-    </svg>
-  </button>
+    </div>
+  </main>
 </div>
 
-<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
-  <div class="modal-card" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h2>{{ editingVehicle ? 'Editar vehículo' : 'Añadir coche' }}</h2>
+<!-- ===================== MODAL ===================== -->
+<div class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-3"
+     *ngIf="showModal"
+     style="background: rgba(0,0,0,0.5); z-index: 1500;"
+     (click)="closeModal()">
 
-      <button class="modal-close" (click)="closeModal()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <line x1="18" y1="6" x2="6" y2="18"/>
-          <line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
+  <div class="card shadow-lg border-0 w-100"
+       style="max-width: 540px; max-height: 95vh; overflow-y: auto;"
+       (click)="$event.stopPropagation()">
+
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0 fw-bold">{{ editingVehicle ? 'Editar vehículo' : 'Añadir coche' }}</h5>
+      <button class="btn-close" (click)="closeModal()"></button>
     </div>
 
-    <div class="modal-body">
-      <div class="vehicle-preview" [style.border-color]="form.colorHex">
-        <div class="preview-accent" [style.background]="form.colorHex"></div>
+    <div class="card-body">
+      <div class="row g-3">
 
-        <svg viewBox="0 0 80 36" fill="none" stroke="currentColor" stroke-width="1.6" class="preview-car">
-          <rect x="2" y="8" width="56" height="20" rx="4"/>
-          <path d="M10 8 L20 2 H50 L58 8"/>
-          <path d="M60 14 H74 L76 20 V28 H60 V14Z"/>
-          <circle cx="14" cy="28" r="5"/>
-          <circle cx="50" cy="28" r="5"/>
-          <circle cx="68" cy="28" r="4"/>
-        </svg>
-
-        <div class="preview-text">
-          <span class="preview-brand">{{ form.brand || 'Marca' }}</span>
-          <span class="preview-model">{{ form.model || 'Modelo' }}</span>
-        </div>
-      </div>
-
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Marca *</label>
-          <input type="text" [(ngModel)]="form.brand" placeholder="ej. Toyota" />
+        <div class="col-12 col-md-6">
+          <label class="form-label small fw-semibold">Marca *</label>
+          <input type="text" class="form-control" [(ngModel)]="form.brand" placeholder="ej. Toyota">
         </div>
 
-        <div class="form-group">
-          <label>Modelo *</label>
-          <input type="text" [(ngModel)]="form.model" placeholder="ej. Yaris" />
+        <div class="col-12 col-md-6">
+          <label class="form-label small fw-semibold">Modelo *</label>
+          <input type="text" class="form-control" [(ngModel)]="form.model" placeholder="ej. Yaris">
         </div>
 
-        <div class="form-group">
-          <label>Año</label>
-          <input type="number" [(ngModel)]="form.year" placeholder="ej. 2022" min="1990" max="2030" />
+        <div class="col-6 col-md-6">
+          <label class="form-label small fw-semibold">Año</label>
+          <input type="number" class="form-control" [(ngModel)]="form.year"
+                 min="1990" max="2030" placeholder="2022">
         </div>
 
-        <div class="form-group">
-          <label>Matrícula</label>
-          <input type="text" [(ngModel)]="form.plate" placeholder="ej. 1234 ABC" />
+        <div class="col-6 col-md-6">
+          <label class="form-label small fw-semibold">Matrícula</label>
+          <input type="text" class="form-control" [(ngModel)]="form.plate" placeholder="1234 ABC">
         </div>
 
-        <div class="form-group full">
-          <label>Tipo de combustible *</label>
-
-          <div class="fuel-selector">
-            <label class="fuel-opt" *ngFor="let f of fuelOptions" [class.selected]="form.fuelType === f.value">
+        <div class="col-12">
+          <label class="form-label small fw-semibold">Tipo de combustible *</label>
+          <div class="d-flex flex-wrap gap-2">
+            <label class="btn btn-sm flex-grow-1"
+                   *ngFor="let f of fuelOptions"
+                   [class.btn-success]="form.fuelType === f.value"
+                   [class.btn-outline-secondary]="form.fuelType !== f.value">
               <input type="radio" [value]="f.value" [(ngModel)]="form.fuelType" name="fuel" hidden>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [innerHTML]="f.icon"></svg>
               {{ f.label }}
             </label>
           </div>
         </div>
 
-        <div class="form-group full">
-          <label>Color del vehículo</label>
-
-          <div class="color-picker-row">
-            <div
-              class="color-opt"
-              *ngFor="let c of colorOptions"
-              [class.selected]="form.colorHex === c.hex"
-              [style.background]="c.hex"
-              [title]="c.name"
-              (click)="form.colorHex = c.hex; form.colorName = c.name">
-              <svg *ngIf="form.colorHex === c.hex" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
-                <polyline points="20 6 9 17 4 12"/>
-              </svg>
-            </div>
+        <div class="col-12">
+          <label class="form-label small fw-semibold">Color del vehículo</label>
+          <div class="d-flex flex-wrap gap-2">
+            <button type="button"
+                    class="rounded-circle border"
+                    *ngFor="let c of colorOptions"
+                    [style.background]="c.hex"
+                    [style.width.px]="32"
+                    [style.height.px]="32"
+                    [style.border-width]="form.colorHex === c.hex ? '3px' : '1px'"
+                    [style.border-color]="form.colorHex === c.hex ? '#1b261e' : '#dee2e6'"
+                    [title]="c.name"
+                    (click)="form.colorHex = c.hex; form.colorName = c.name">
+            </button>
           </div>
         </div>
 
-        <div class="form-group full">
-          <label class="default-checkbox">
-            <input type="checkbox" [(ngModel)]="form.isDefault">
-            Marcar como vehículo predeterminado
-          </label>
+        <div class="col-12">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="default-check"
+                   [(ngModel)]="form.isDefault">
+            <label class="form-check-label" for="default-check">
+              Marcar como vehículo predeterminado
+            </label>
+          </div>
         </div>
+
       </div>
     </div>
 
-    <div class="modal-footer">
-      <button
-        type="button"
-        class="btn-cancel"
-        (click)="closeModal()"
-        [disabled]="saving">
+    <div class="card-footer bg-white d-flex justify-content-end gap-2">
+      <button class="btn btn-outline-secondary" (click)="closeModal()" [disabled]="saving">
         Cancelar
       </button>
-
-      <button
-        type="button"
-        class="btn-save"
-        (click)="saveVehicle()"
-        [disabled]="saving || !form.brand || !form.model">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
+      <button class="btn btn-success"
+              (click)="saveVehicle()"
+              [disabled]="saving || !form.brand || !form.model">
         {{ saving ? 'Guardando...' : (editingVehicle ? 'Guardar cambios' : 'Añadir vehículo') }}
       </button>
     </div>
