@@ -3,15 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
-// Servicio para el historial de rutas del usuario y sus favoritos.
-// Endpoints:
-//   GET    /users/{id}/routes/history
-//   DELETE /users/{id}/routes/history/{historyId}
-//   GET    /users/{id}/routes/favorites
-//   POST   /users/{id}/routes/favorites
-//   DELETE /users/{id}/routes/favorites/{favoriteId}
-
-// Una fila del historial (una ruta calculada por el usuario).
+//historial de rutas y favoritos del usuario
 export interface HistoryRoute {
   id: number;
   user_id: number;
@@ -24,7 +16,7 @@ export interface HistoryRoute {
   created_at: string;
 }
 
-// Un favorito (apunta a una entrada del historial).
+//un favorito referencia una entrada del historial
 export interface FavoriteRoute {
   id: number;
   user_id: number;
@@ -39,11 +31,6 @@ export class RouteService {
   private http = inject(HttpClient);
   private apiUrl = environment.apiUrl;
 
-  // -------------------------------------------------------
-  //  HISTORIAL
-  // -------------------------------------------------------
-
-  // Devuelve todas las rutas que el usuario ha calculado.
   getHistory(userId: number): Observable<HistoryRoute[]> {
     return this.http.get<HistoryRoute[]>(
       `${this.apiUrl}/users/${userId}/routes/history`,
@@ -51,7 +38,6 @@ export class RouteService {
     );
   }
 
-  // Borra una entrada del historial.
   deleteHistory(userId: number, historyId: number): Observable<any> {
     return this.http.delete(
       `${this.apiUrl}/users/${userId}/routes/history/${historyId}`,
@@ -59,11 +45,6 @@ export class RouteService {
     );
   }
 
-  // -------------------------------------------------------
-  //  FAVORITOS
-  // -------------------------------------------------------
-
-  // Lista de favoritos del usuario.
   getFavorites(userId: number): Observable<FavoriteRoute[]> {
     return this.http.get<FavoriteRoute[]>(
       `${this.apiUrl}/users/${userId}/routes/favorites`,
@@ -71,7 +52,6 @@ export class RouteService {
     );
   }
 
-  // Marca una entrada del historial como favorita.
   addFavorite(userId: number, historyId: number): Observable<FavoriteRoute> {
     return this.http.post<FavoriteRoute>(
       `${this.apiUrl}/users/${userId}/routes/favorites`,
@@ -80,17 +60,12 @@ export class RouteService {
     );
   }
 
-  // Quita una entrada de favoritos.
   removeFavorite(userId: number, favoriteId: number): Observable<any> {
     return this.http.delete(
       `${this.apiUrl}/users/${userId}/routes/favorites/${favoriteId}`,
       { headers: this.getAuthHeaders() }
     );
   }
-
-  // -------------------------------------------------------
-  //  AUXILIAR
-  // -------------------------------------------------------
 
   private getAuthHeaders(): HttpHeaders {
     const token = localStorage.getItem('token') || '';

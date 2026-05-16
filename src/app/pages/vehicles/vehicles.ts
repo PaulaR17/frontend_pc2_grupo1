@@ -29,6 +29,7 @@ interface VehicleForm {
   isDefault: boolean;
 }
 
+//pagina "mis vehiculos"; CRUD completo de vehiculos del usuario
 @Component({
   selector: 'app-vehicles',
   standalone: true,
@@ -81,6 +82,7 @@ export class VehiclesComponent implements OnInit {
     this.loadCurrentUser();
   }
 
+  //devuelve la lista filtrada segun el tipo de combustible activo
   get filteredVehicles(): Vehicle[] {
     const filtrados = this.activeFilter === 'all'
       ? this.vehicles
@@ -92,6 +94,7 @@ export class VehiclesComponent implements OnInit {
     this.activeFilter = f;
   }
 
+  //etiqueta legible para el tipo de combustible
   fuelLabel(f: FuelType): string {
     const map: Record<FuelType, string> = {
       electric: 'Eléctrico',
@@ -143,6 +146,7 @@ export class VehiclesComponent implements OnInit {
     this.notificationMessage = '';
   }
 
+  //no permitimos cerrar el modal mientras se este guardando
   closeModal(): void {
     if (!this.saving) {
       this.showModal = false;
@@ -151,6 +155,7 @@ export class VehiclesComponent implements OnInit {
     }
   }
 
+  //valida y guarda el vehiculo (crear o editar segun editingVehicle)
   saveVehicle(): void {
     const usuarioOk = !!this.user?.id;
     const formularioOk = this.validateForm();
@@ -208,6 +213,7 @@ export class VehiclesComponent implements OnInit {
     });
   }
 
+  //elimina un vehiculo previa confirmacion del usuario
   deleteVehicle(v: Vehicle): void {
     if (!this.user?.id) {
       this.showNotification('No se ha podido identificar el usuario.', 'error');
@@ -232,6 +238,7 @@ export class VehiclesComponent implements OnInit {
     });
   }
 
+  //marca un vehiculo como predeterminado del usuario
   setDefaultVehicle(v: Vehicle): void {
     if (!this.user?.id) {
       this.showNotification('No se ha podido identificar el usuario.', 'error');
@@ -294,6 +301,8 @@ export class VehiclesComponent implements OnInit {
     }
   }
 
+  //convierte la estructura del backend a la del frontend, con
+  //valores por defecto para los campos opcionales que llegan vacios
   private mapBackendVehicle(vehicle: BackendVehicle): Vehicle {
     const fallbackName = vehicle.nickname || 'Vehículo';
     const fallbackParts = fallbackName.split(' ');
@@ -328,6 +337,7 @@ export class VehiclesComponent implements OnInit {
     };
   }
 
+  //valida marca, modelo y año; si algo falla muestra el aviso y devuelve false
   private validateForm(): boolean {
     let mensaje = '';
 
@@ -382,6 +392,7 @@ export class VehiclesComponent implements OnInit {
     }, 4500);
   }
 
+  //cierra los menus si el clic ha sido fuera de las cards o la navbar
   @HostListener('document:click', ['$event'])
   clickOut(event: Event): void {
     const target = event.target as HTMLElement;

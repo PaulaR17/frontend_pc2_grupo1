@@ -15,9 +15,7 @@ import { AdminUsersComponent } from './pages/admin-users/admin-users';
 import { authGuard } from './core/guards/auth-guard';
 import { adminGuard } from './core/guards/admin-guard';
 
-// Rutas de la app.
-//  - authGuard:  solo entran usuarios logueados.
-//  - adminGuard: solo entra el usuario con rol ADMIN.
+//rutas de la app con sus guards
 export const routes: Routes = [
   { path: 'home',      component: PublicHomeComponent },
   { path: 'login',     component: LoginComponent },

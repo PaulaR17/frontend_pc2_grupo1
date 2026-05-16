@@ -15,6 +15,8 @@ interface SavedRoute {
   lng: number;
 }
 
+//pagina home del usuario logueado; mapa con incidencias, buscador
+//y rutas guardadas en localStorage
 @Component({
   selector: 'app-user-home',
   standalone: true,
@@ -41,7 +43,7 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
 
   savedRoutes: SavedRoute[] = [];
 
-  // Distritos de Madrid (no cambia)
+  //distritos de Madrid; lista estatica para los accesos rapidos
   zonasDisponibles: string[] = [
     'Centro', 'Arganzuela', 'Retiro', 'Salamanca', 'Chamartín', 'Tetuán',
     'Chamberí', 'Fuencarral-El Pardo', 'Moncloa-Aravaca', 'Latina',
@@ -63,14 +65,9 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
     this.initMap();
   }
 
-  // -------------------------------------------------------
-  //  CARGA INICIAL
-  // -------------------------------------------------------
+  //carga inicial
 
-  /**
-   * Carga el usuario actual.
-   * Refactorizado para usar if/else (sin return dentro del if).
-   */
+  //carga el usuario actual; si no hay id en localStorage hace logout
   private cargarUsuarioActual(): void {
     const id = localStorage.getItem('user_id');
 
@@ -79,6 +76,7 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
         next: (res: any) => {
           this.user = res;
           this.userInitials = this.buildInitials(res.name);
+          //si el backend aun no devuelve eco_score, simulamos uno alto
           this.ecoScore = res.eco_score ?? Math.floor(Math.random() * 40) + 60;
         },
         error: () => this.logout()
@@ -96,7 +94,7 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
     }
   }
 
-  /** Iniciales (1 ó 2 letras) a partir del nombre. */
+  //iniciales (1 o 2 letras) a partir del nombre
   private buildInitials(name: string): string {
     let iniciales = '?';
 
@@ -120,13 +118,10 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
     this.zoneLayer.addTo(this.map);
     this.incidentsLayer.addTo(this.map);
 
-    // Pintamos las incidencias activas en el mapa.
     this.cargarIncidencias();
   }
 
-  // -------------------------------------------------------
-  //  CAPA DE INCIDENCIAS
-  // -------------------------------------------------------
+  //capa de incidencias
 
   private cargarIncidencias(): void {
     this.adminService.getIncidents().subscribe({
@@ -191,14 +186,9 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
     return `<b>${titulo}</b><br><small>${etiqueta}</small><br>${descripcion}`;
   }
 
-  // -------------------------------------------------------
-  //  BÚSQUEDA Y RUTA
-  // -------------------------------------------------------
+  //busqueda y ruta
 
-  /**
-   * Lanza una búsqueda; solo procede si hay texto.
-   * Refactorizado: if/else en vez de return-temprano.
-   */
+  //lanza una busqueda solo si hay texto en el input
   onSearch(): void {
     const query = this.searchQuery.trim();
 
@@ -223,6 +213,7 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
     });
   }
 
+  //guarda la ruta en localStorage (max 20) y la pinta en el mapa
   private guardarYMostrarRuta(destination: any, query: string): void {
     this.searchCount++;
 
@@ -279,7 +270,6 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
     this.router.navigate(['/vehicles']);
   }
 
-
   toggleUserMenu(): void {
     this.userMenuOpen = !this.userMenuOpen;
   }
@@ -288,7 +278,7 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
     this.authService.logout();
   }
 
-  /** Cierra menús cuando el usuario clica fuera. */
+  //cierra menus y sugerencias si el usuario clica fuera de ellos
   @HostListener('document:click', ['$event'])
   clickOut(event: Event): void {
     const target = event.target as HTMLElement;

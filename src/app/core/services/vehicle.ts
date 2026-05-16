@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
+//CRUD de vehiculos del usuario
 export type FuelType = 'electric' | 'hybrid' | 'gasoline' | 'diesel';
 
 export interface BackendVehicle {
@@ -73,6 +74,7 @@ export class VehicleService {
     });
   }
 
+  //pone este vehiculo como predeterminado
   setDefault(userId: number, vehicleId: number): Observable<any> {
     return this.http.put(`${this.apiUrl}/users/${userId}/vehicles/${vehicleId}/default`, {}, {
       headers: this.getAuthHeaders()
@@ -87,4 +89,3 @@ export class VehicleService {
     });
   }
 }
-

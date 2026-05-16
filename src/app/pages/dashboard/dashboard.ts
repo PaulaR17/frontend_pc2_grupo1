@@ -6,10 +6,10 @@ import { Chart, registerables } from 'chart.js';
 import { AuthService } from '../../core/services/auth';
 import { AdminService, DashboardData, IncidentSummary } from '../../core/services/admin';
 
-// Chart.js necesita registrar los módulos una sola vez en toda la app.
-// Lo dejamos aquí fuera del componente para que se ejecute al importarlo.
+//registro de modulos de Chart.js, solo una vez
 Chart.register(...registerables);
 
+//panel admin con metricas, graficos y boton de predicciones
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -22,57 +22,35 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private adminService = inject(AdminService);
 
-  // -------------------------------------------------------
-  //  DATOS QUE PINTA LA VISTA
-  // -------------------------------------------------------
-
   dashboard: DashboardData | null = null;
   incidents: IncidentSummary[] = [];
 
-  // Cuántas incidencias hay de cada tipo (lo usa el gráfico de barras).
+  //conteo para el grafico de barras
   incidentsPorTipo = { ACCIDENT: 0, ROADWORK: 0, EVENT: 0 };
 
   loading = true;
   errorMessage = '';
 
-  // Mensajes para la zona de acciones rápidas (ejecutar predicciones).
   prediccionesEjecutando = false;
   prediccionesMensaje = '';
   prediccionesError = '';
 
-  // -------------------------------------------------------
-  //  REFERENCIAS A LOS GRÁFICOS
-  //  Las guardamos para poder destruirlos si se recarga
-  //  la pantalla (si no, Chart.js se queja).
-  // -------------------------------------------------------
-
+  //guardamos las refs para poder destruir antes de redibujar
   private chartUsuarios: Chart | null = null;
   private chartTipos: Chart | null = null;
   private chartIncidencias: Chart | null = null;
-
-  // -------------------------------------------------------
-  //  CICLO DE VIDA
-  // -------------------------------------------------------
 
   ngOnInit(): void {
     this.cargarDashboard();
   }
 
   ngOnDestroy(): void {
-    // Limpieza de gráficos al salir de la página.
     this.destruirGrafico(this.chartUsuarios);
     this.destruirGrafico(this.chartTipos);
     this.destruirGrafico(this.chartIncidencias);
   }
 
-  // -------------------------------------------------------
-  //  CARGA DE DATOS
-  // -------------------------------------------------------
-
-  /**
-   * Primero pedimos las métricas (totales de usuarios e incidencias).
-   * Cuando llegan, pedimos la lista de incidencias para agrupar por tipo.
-   */
+  //pide metricas y luego las incidencias para agrupar por tipo
   private cargarDashboard(): void {
     this.adminService.getDashboard().subscribe({
       next: (data) => {
@@ -92,8 +70,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.incidents = lista || [];
         this.contarIncidenciasPorTipo(this.incidents);
         this.loading = false;
-        // Esperamos un tick para que Angular renderice los <canvas>
-        // (están dentro de *ngIf="!loading"). Si pintamos antes, no existen.
+        //esperamos un tick a que Angular monte los canvas
         setTimeout(() => this.dibujarGraficos(), 0);
       },
       error: () => {
@@ -103,10 +80,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * Cuenta cuántas incidencias hay de cada tipo.
-   * Recorremos toda la lista con if/else if/else, sin break ni return.
-   */
   private contarIncidenciasPorTipo(lista: IncidentSummary[]): void {
     this.incidentsPorTipo = { ACCIDENT: 0, ROADWORK: 0, EVENT: 0 };
 
@@ -121,17 +94,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  // -------------------------------------------------------
-  //  GRÁFICOS (Chart.js)
-  // -------------------------------------------------------
-
   private dibujarGraficos(): void {
     this.dibujarGraficoUsuarios();
     this.dibujarGraficoTipos();
     this.dibujarGraficoIncidencias();
   }
 
-  /** Doughnut: usuarios activos vs inactivos. */
+  //usuarios activos vs inactivos
   private dibujarGraficoUsuarios(): void {
     const canvas = document.getElementById('grafico-usuarios') as HTMLCanvasElement | null;
 
@@ -156,7 +125,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Bar: incidencias agrupadas por tipo. */
+  //incidencias por tipo
   private dibujarGraficoTipos(): void {
     const canvas = document.getElementById('grafico-tipos') as HTMLCanvasElement | null;
 
@@ -187,7 +156,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Bar: incidencias activas vs cerradas. */
+  //activas vs cerradas
   private dibujarGraficoIncidencias(): void {
     const canvas = document.getElementById('grafico-incidencias') as HTMLCanvasElement | null;
 
@@ -218,29 +187,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Helper para destruir un gráfico si existe.
   private destruirGrafico(grafico: Chart | null): void {
     if (grafico) {
       grafico.destroy();
     }
   }
 
-  // -------------------------------------------------------
-  //  ACCIONES DE LA NAVBAR
-  // -------------------------------------------------------
-
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/login']);
   }
 
-  // -------------------------------------------------------
-  //  ACCIONES ADMIN
-  // -------------------------------------------------------
-
-  // Lanza el cálculo de predicciones en el backend.
-  // Sirve como una de las "modificaciones de configuración"
-  // que el admin puede hacer desde el panel.
+  //lanza el calculo de predicciones de PC1
   ejecutarPredicciones(): void {
     this.prediccionesMensaje = '';
     this.prediccionesError = '';

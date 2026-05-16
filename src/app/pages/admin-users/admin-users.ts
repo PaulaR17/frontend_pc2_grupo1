@@ -10,10 +10,7 @@ import {
   UserRole
 } from '../../core/services/admin';
 
-// Página admin: gestión de usuarios.
-// Permite ver el listado, editar (nombre, mail, rol, estado)
-// y desactivar usuarios.
-
+//gestion de usuarios del panel admin
 @Component({
   selector: 'app-admin-users',
   standalone: true,
@@ -32,7 +29,6 @@ export class AdminUsersComponent implements OnInit {
   errorMessage = '';
   successMessage = '';
 
-  // Estado del formulario de edición.
   mostrarFormulario = false;
   editandoId: number | null = null;
   formulario: AdminUserPayload = this.formularioVacio();
@@ -45,10 +41,6 @@ export class AdminUsersComponent implements OnInit {
   ngOnInit(): void {
     this.cargarUsuarios();
   }
-
-  // -------------------------------------------------------
-  //  CARGA
-  // -------------------------------------------------------
 
   cargarUsuarios(): void {
     this.loading = true;
@@ -65,10 +57,6 @@ export class AdminUsersComponent implements OnInit {
       }
     });
   }
-
-  // -------------------------------------------------------
-  //  FORMULARIO EDITAR
-  // -------------------------------------------------------
 
   abrirFormularioEditar(usuario: AdminUser): void {
     this.editandoId = usuario.id;
@@ -117,10 +105,7 @@ export class AdminUsersComponent implements OnInit {
     });
   }
 
-  // -------------------------------------------------------
-  //  DESACTIVAR
-  // -------------------------------------------------------
-
+  //no borra, solo pone status=false
   desactivar(usuario: AdminUser): void {
     this.limpiarMensajes();
 
@@ -141,15 +126,10 @@ export class AdminUsersComponent implements OnInit {
     }
   }
 
-  // -------------------------------------------------------
-  //  AYUDANTES
-  // -------------------------------------------------------
-
   private formularioVacio(): AdminUserPayload {
     return { name: '', mail: '', rol: 'USER', status: true };
   }
 
-  // Prepara los datos limpios para mandar al backend.
   private prepararPayload(): AdminUserPayload {
     return {
       name: (this.formulario.name || '').trim(),
@@ -159,7 +139,7 @@ export class AdminUsersComponent implements OnInit {
     };
   }
 
-  // Valida nombre y email. Si algo falla, guarda el mensaje y devuelve false.
+  //valida nombre y email
   private validarFormulario(datos: AdminUserPayload): boolean {
     let valido = true;
     const nombreValido = !!datos.name && datos.name.length <= 100;

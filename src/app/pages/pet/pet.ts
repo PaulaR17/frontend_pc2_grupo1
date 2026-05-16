@@ -6,9 +6,7 @@ import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth';
 import { PetService, Pet } from '../../core/services/pet';
 
-// Página "Mi mascota": muestra y permite editar la mascota
-// virtual del usuario (nombre, nivel y barra de experiencia).
-
+//pagina de la mascota del usuario
 @Component({
   selector: 'app-pet',
   standalone: true,
@@ -21,28 +19,22 @@ export class PetComponent implements OnInit {
   private authService = inject(AuthService);
   private petService = inject(PetService);
 
-  // Datos que pinta la vista.
   pet: Pet | null = null;
   nombreEditable = '';
 
-  // Mensajes para el usuario.
   loading = true;
   saving = false;
   errorMessage = '';
   successMessage = '';
 
-  // Cuánta experiencia necesita cada nivel.
-  // Lo dejamos como constante para que sea fácil cambiarlo.
+  //XP que cuesta cada nivel
   readonly XP_POR_NIVEL = 100;
 
   ngOnInit(): void {
     this.cargarMascota();
   }
 
-  // -------------------------------------------------------
-  //  CARGA DE DATOS
-  // -------------------------------------------------------
-
+  //pide la mascota del usuario actual
   private cargarMascota(): void {
     const userId = this.authService.getCurrentUserId();
 
@@ -64,11 +56,7 @@ export class PetComponent implements OnInit {
     }
   }
 
-  // -------------------------------------------------------
-  //  CÁLCULOS PARA LA VISTA
-  // -------------------------------------------------------
-
-  // Porcentaje de la barra de progreso (0-100).
+  //0-100 para la barra de progreso del nivel
   porcentajeXp(): number {
     let resultado = 0;
 
@@ -80,7 +68,7 @@ export class PetComponent implements OnInit {
     return resultado;
   }
 
-  // XP que lleva acumulada en el nivel actual.
+  //XP dentro del nivel actual
   xpActualNivel(): number {
     let resultado = 0;
 
@@ -91,11 +79,7 @@ export class PetComponent implements OnInit {
     return resultado;
   }
 
-  // -------------------------------------------------------
-  //  ACCIONES
-  // -------------------------------------------------------
-
-  // Guarda el nuevo nombre.
+  //guarda el nombre nuevo
   guardarNombre(): void {
     this.limpiarMensajes();
 
@@ -112,8 +96,7 @@ export class PetComponent implements OnInit {
     }
   }
 
-  // Suma 10 puntos de XP. Si llega a XP_POR_NIVEL,
-  // el nivel sube y la barra se reinicia.
+  //da 10 XP y sube de nivel si toca
   sumarXp(): void {
     this.limpiarMensajes();
 
@@ -135,7 +118,7 @@ export class PetComponent implements OnInit {
     }
   }
 
-  // Llama al backend con los datos pasados y refresca la pantalla.
+  //manda el PUT y refresca la mascota
   private lanzarActualizacion(
     userId: number,
     payload: { name?: string; xp?: number; level?: number },
@@ -157,7 +140,6 @@ export class PetComponent implements OnInit {
     });
   }
 
-  // Reinicia los mensajes antes de cada acción.
   private limpiarMensajes(): void {
     this.errorMessage = '';
     this.successMessage = '';

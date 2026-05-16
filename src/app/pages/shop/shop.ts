@@ -11,11 +11,10 @@ import {
   ItemType
 } from '../../core/services/item';
 
-// Página "Tienda" con tres pestañas:
-//   - Catálogo: todos los items activos.
-//   - Inventario: items que ya tiene el usuario.
-//   - Chapitas: badges (recompensas) conseguidas.
-
+//pagina "tienda" con tres pestañas:
+//  catalogo   -> todos los items activos
+//  inventario -> items que ya tiene el usuario
+//  chapitas   -> recompensas (badges) conseguidas
 @Component({
   selector: 'app-shop',
   standalone: true,
@@ -28,16 +27,14 @@ export class ShopComponent implements OnInit {
   private authService = inject(AuthService);
   private itemService = inject(ItemService);
 
-  // Pestaña visible. Empezamos en el catálogo.
   pestanaActiva: 'catalogo' | 'inventario' | 'chapitas' = 'catalogo';
 
-  // Datos cargados del backend.
   catalogo: Item[] = [];
   inventario: InventoryRow[] = [];
   chapitas: UserBadge[] = [];
 
-  // Diccionario item_id -> Item para mostrar el detalle
-  // de cada fila del inventario sin volver a pedir nada.
+  //diccionario item_id -> Item para mostrar el detalle de cada fila
+  //del inventario sin volver a pedir nada al backend
   itemsPorId: { [id: number]: Item } = {};
 
   loading = true;
@@ -47,12 +44,8 @@ export class ShopComponent implements OnInit {
     this.cargarTodo();
   }
 
-  // -------------------------------------------------------
-  //  CARGA DE DATOS
-  // -------------------------------------------------------
-
-  // Hace las 3 peticiones en cadena (catalogo → inventario → logros)
-  // para mantener la lógica simple y fácil de seguir.
+  //hace las 3 peticiones en cadena (catalogo -> inventario -> chapitas)
+  //para mantener la logica simple y facil de seguir
   private cargarTodo(): void {
     const userId = this.authService.getCurrentUserId();
 
@@ -104,7 +97,6 @@ export class ShopComponent implements OnInit {
     });
   }
 
-  // Rellena el diccionario id -> item con la lista del catálogo.
   private guardarItemsPorId(items: Item[]): void {
     this.itemsPorId = {};
 
@@ -113,11 +105,9 @@ export class ShopComponent implements OnInit {
     }
   }
 
-  // -------------------------------------------------------
-  //  AYUDANTES PARA LA VISTA
-  // -------------------------------------------------------
+  //ayudantes para la vista
 
-  // Devuelve el item asociado a una fila del inventario.
+  //devuelve el item asociado a una fila del inventario (o null si no esta)
   itemDeInventario(fila: InventoryRow): Item | null {
     let resultado: Item | null = null;
 
@@ -128,7 +118,6 @@ export class ShopComponent implements OnInit {
     return resultado;
   }
 
-  // Texto bonito para el tipo de item.
   etiquetaTipo(tipo: ItemType): string {
     let etiqueta: string = tipo;
 
@@ -143,7 +132,7 @@ export class ShopComponent implements OnInit {
     return etiqueta;
   }
 
-  // Color del badge según la rareza del item.
+  //color del badge segun la rareza del item
   colorRareza(rareza: string | null): string {
     let color = 'bg-secondary';
 
@@ -160,7 +149,6 @@ export class ShopComponent implements OnInit {
     return color;
   }
 
-  // Texto bonito según el código de la chapita.
   textoChapita(code: string): string {
     let texto = code;
 

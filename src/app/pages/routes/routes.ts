@@ -9,10 +9,7 @@ import {
   FavoriteRoute
 } from '../../core/services/route';
 
-// Página "Mis rutas" con dos pestañas:
-//   - Historial: rutas calculadas por el usuario.
-//   - Favoritos: rutas guardadas como favoritas.
-
+//mis rutas, con historial y favoritos
 @Component({
   selector: 'app-routes',
   standalone: true,
@@ -25,15 +22,12 @@ export class RoutesComponent implements OnInit {
   private authService = inject(AuthService);
   private routeService = inject(RouteService);
 
-  // Pestaña visible.
   pestanaActiva: 'historial' | 'favoritos' = 'historial';
 
-  // Datos cargados del backend.
   historial: HistoryRoute[] = [];
   favoritos: FavoriteRoute[] = [];
 
-  // Guardamos los IDs de history que están en favoritos para
-  // pintar correctamente el botón "favorito / no favorito".
+  //history_ids que ya estan en favoritos
   idsEnFavoritos: Set<number> = new Set();
 
   loading = true;
@@ -44,10 +38,7 @@ export class RoutesComponent implements OnInit {
     this.cargarTodo();
   }
 
-  // -------------------------------------------------------
-  //  CARGA DE DATOS
-  // -------------------------------------------------------
-
+  //carga historial y luego favoritos
   private cargarTodo(): void {
     const userId = this.authService.getCurrentUserId();
 
@@ -86,7 +77,7 @@ export class RoutesComponent implements OnInit {
     });
   }
 
-  // Rellena el conjunto de history_ids que están en favoritos.
+  //rellena el set con los history_ids de favoritos
   private recalcularIdsFavoritos(): void {
     this.idsEnFavoritos = new Set();
 
@@ -95,9 +86,7 @@ export class RoutesComponent implements OnInit {
     }
   }
 
-  // -------------------------------------------------------
-  //  ACCIONES SOBRE EL HISTORIAL
-  // -------------------------------------------------------
+  //acciones sobre el historial
 
   borrarHistorial(item: HistoryRoute): void {
     this.limpiarMensajes();
@@ -107,6 +96,7 @@ export class RoutesComponent implements OnInit {
     if (userId !== null && confirmado) {
       this.routeService.deleteHistory(userId, item.id).subscribe({
         next: () => {
+          //al borrar del historial tambien quitamos de favoritos si estaba
           this.historial = this.historial.filter(r => r.id !== item.id);
           this.favoritos = this.favoritos.filter(f => f.history_id !== item.id);
           this.recalcularIdsFavoritos();
@@ -119,7 +109,6 @@ export class RoutesComponent implements OnInit {
     }
   }
 
-  // Marca una ruta del historial como favorita.
   marcarFavorito(item: HistoryRoute): void {
     this.limpiarMensajes();
     const userId = this.authService.getCurrentUserId();
@@ -138,7 +127,6 @@ export class RoutesComponent implements OnInit {
     }
   }
 
-  // Quita una ruta de favoritos.
   quitarFavorito(fav: FavoriteRoute): void {
     this.limpiarMensajes();
     const userId = this.authService.getCurrentUserId();
@@ -157,7 +145,8 @@ export class RoutesComponent implements OnInit {
     }
   }
 
-  // Atajo desde la tabla de favoritos: quita por history_id.
+  //atajo desde la tabla de favoritos: localiza el fav por history_id
+  //y reutiliza quitarFavorito
   quitarFavoritoPorHistory(historyId: number): void {
     const fav = this.favoritos.find(f => f.history_id === historyId);
 
@@ -166,16 +155,13 @@ export class RoutesComponent implements OnInit {
     }
   }
 
-  // -------------------------------------------------------
-  //  AYUDANTES
-  // -------------------------------------------------------
+  //ayudantes
 
-  // ¿Esta ruta del historial está en favoritos?
   esFavorita(historyId: number): boolean {
     return this.idsEnFavoritos.has(historyId);
   }
 
-  // Texto corto con las coordenadas (para que la tabla quepa).
+  //texto corto con las coordenadas (para que la tabla quepa)
   coordsCortas(lat: number, lon: number): string {
     const latRedondeada = Math.round(lat * 1000) / 1000;
     const lonRedondeada = Math.round(lon * 1000) / 1000;

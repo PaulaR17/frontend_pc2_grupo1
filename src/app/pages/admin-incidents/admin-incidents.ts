@@ -10,9 +10,7 @@ import {
   IncidentType
 } from '../../core/services/admin';
 
-// Página de administración de incidencias.
-// Permite listar, crear, editar y cerrar las incidencias del mapa.
-
+//CRUD de incidencias del mapa
 @Component({
   selector: 'app-admin-incidents',
   standalone: true,
@@ -24,22 +22,18 @@ export class AdminIncidentsComponent implements OnInit {
   private router = inject(Router);
   private adminService = inject(AdminService);
 
-  // Listado completo de incidencias que pinta la tabla.
   incidents: IncidentSummary[] = [];
 
-  // Estado general de la pantalla.
   loading = true;
   saving = false;
   errorMessage = '';
   successMessage = '';
 
-  // Datos del formulario (modal). Sirve tanto para crear
-  // como para editar; si editandoId es null, es nueva.
+  //editandoId null = creacion, con id = edicion
   mostrarFormulario = false;
   editandoId: number | null = null;
   formulario: IncidentPayload = this.formularioVacio();
 
-  // Para que el <select> sepa qué opciones hay.
   tiposDisponibles: { valor: IncidentType, etiqueta: string }[] = [
     { valor: 'ACCIDENT', etiqueta: 'Accidente' },
     { valor: 'ROADWORK', etiqueta: 'Obras' },
@@ -49,10 +43,6 @@ export class AdminIncidentsComponent implements OnInit {
   ngOnInit(): void {
     this.cargarIncidencias();
   }
-
-  // -------------------------------------------------------
-  //  CARGA DE DATOS
-  // -------------------------------------------------------
 
   cargarIncidencias(): void {
     this.loading = true;
@@ -69,10 +59,6 @@ export class AdminIncidentsComponent implements OnInit {
       }
     });
   }
-
-  // -------------------------------------------------------
-  //  ABRIR / CERRAR FORMULARIO
-  // -------------------------------------------------------
 
   abrirFormularioNueva(): void {
     this.editandoId = null;
@@ -100,10 +86,7 @@ export class AdminIncidentsComponent implements OnInit {
     this.editandoId = null;
   }
 
-  // -------------------------------------------------------
-  //  GUARDAR (CREAR O EDITAR)
-  // -------------------------------------------------------
-
+  //crea o edita segun editandoId
   guardar(): void {
     this.limpiarMensajes();
 
@@ -111,7 +94,7 @@ export class AdminIncidentsComponent implements OnInit {
     const valido = this.validarFormulario(datos);
 
     if (!valido) {
-      // El mensaje de error ya se ha puesto dentro de validar.
+      //el error ya esta puesto en validarFormulario
       this.saving = false;
     } else if (this.editandoId === null) {
       this.lanzarCreacion(datos);
@@ -154,10 +137,7 @@ export class AdminIncidentsComponent implements OnInit {
     });
   }
 
-  // -------------------------------------------------------
-  //  CERRAR INCIDENCIA (soft delete)
-  // -------------------------------------------------------
-
+  //soft delete: active=false
   cerrarIncidencia(incident: IncidentSummary): void {
     this.limpiarMensajes();
 
@@ -178,11 +158,6 @@ export class AdminIncidentsComponent implements OnInit {
     }
   }
 
-  // -------------------------------------------------------
-  //  AYUDANTES
-  // -------------------------------------------------------
-
-  // Plantilla vacía para el formulario.
   private formularioVacio(): IncidentPayload {
     return {
       type: 'ACCIDENT',
@@ -194,8 +169,7 @@ export class AdminIncidentsComponent implements OnInit {
     };
   }
 
-  // Convierte los strings del form (lat/lon vienen como string del input)
-  // a números reales, y limpia campos vacíos.
+  //convierte lat/lon a number y vacios a null
   private prepararPayload(): IncidentPayload {
     return {
       type: this.formulario.type,
@@ -207,7 +181,7 @@ export class AdminIncidentsComponent implements OnInit {
     };
   }
 
-  // Valida el formulario y, si algo falla, deja el mensaje en errorMessage.
+  //si falla algo deja el aviso en errorMessage
   private validarFormulario(datos: IncidentPayload): boolean {
     let valido = true;
     const latValida = !isNaN(datos.lat) && datos.lat >= -90 && datos.lat <= 90;
@@ -224,7 +198,6 @@ export class AdminIncidentsComponent implements OnInit {
     return valido;
   }
 
-  // Texto bonito para mostrar el tipo en la tabla.
   etiquetaTipo(tipo: IncidentType): string {
     let etiqueta: string = tipo;
 
@@ -239,7 +212,6 @@ export class AdminIncidentsComponent implements OnInit {
     return etiqueta;
   }
 
-  // Color del badge según el tipo de incidencia.
   colorTipo(tipo: IncidentType): string {
     let color = 'bg-secondary';
 

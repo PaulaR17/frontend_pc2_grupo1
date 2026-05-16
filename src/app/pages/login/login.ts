@@ -24,13 +24,7 @@ export class LoginComponent {
   successMessage = '';
   loading = false;
 
-  /**
-   * Lógica de login.
-   * Refactorizado para NO usar `return` dentro de los `if`:
-   *  - Validamos primero el formulario con una variable.
-   *  - Solo si es válido lanzamos la petición.
-   *  - En el error usamos if/else if/else encadenados.
-   */
+  //envia el formulario de login si esta relleno
   onLogin(): void {
     this.errorMessage = '';
     this.successMessage = '';
@@ -46,6 +40,7 @@ export class LoginComponent {
     }
   }
 
+  //hace la llamada y redirige segun el rol
   private lanzarLogin(): void {
     this.loading = true;
 
@@ -63,20 +58,14 @@ export class LoginComponent {
     });
   }
 
-  /**
-   * Si el usuario es ADMIN va al panel; si no, al área de usuario.
-   * Cumple lo que pide el enunciado de PC3 (acceso restringido por rol).
-   */
+  //ADMIN al dashboard, USER a su home
   private redirigirSegunRol(): void {
     const esAdmin = this.authService.isAdmin();
     const destino = esAdmin ? '/dashboard' : '/user-home';
     this.router.navigate([destino]);
   }
 
-  /**
-   * Convierte el error HTTP en un mensaje claro para el usuario.
-   * Usamos if/else if/else (sin returns intermedios).
-   */
+  //traduce el error HTTP a un mensaje legible
   private traducirErrorLogin(err: any): string {
     let mensaje = 'No se pudo iniciar sesión. Revisa el backend.';
 

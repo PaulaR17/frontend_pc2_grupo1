@@ -6,6 +6,7 @@ import { AuthService } from '../../core/services/auth';
 import { BackendVehicle, VehicleService } from '../../core/services/vehicle';
 import { ItemService, UserBadge } from '../../core/services/item';
 
+//perfil del usuario con sus datos, vehiculos y chapitas
 @Component({
   selector: 'app-profile',
   standalone: true,
@@ -26,7 +27,6 @@ export class ProfileComponent implements OnInit {
 
   activeSection: 'personal' | 'vehiculos' | 'chapitas' | 'preferencias' = 'personal';
 
-  // Chapitas (badges) que ha conseguido el usuario.
   chapitas: UserBadge[] = [];
   chapitasError = '';
 
@@ -63,7 +63,7 @@ export class ProfileComponent implements OnInit {
     }
   }
 
-  // Carga las chapitas (badges) del usuario.
+  //chapitas conseguidas
   private loadChapitas(userId: number): void {
     this.itemService.getBadges(userId).subscribe({
       next: (filas) => {
@@ -75,7 +75,7 @@ export class ProfileComponent implements OnInit {
     });
   }
 
-  // Texto bonito para el código de cada chapita.
+  //etiqueta legible para cada chapita
   textoChapita(code: string): string {
     let texto = code;
 
@@ -90,6 +90,7 @@ export class ProfileComponent implements OnInit {
     return texto;
   }
 
+  //preview del avatar elegido
   onAvatarChange(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
 
@@ -100,10 +101,7 @@ export class ProfileComponent implements OnInit {
     }
   }
 
-  /**
-   * Guarda los datos personales del usuario.
-   * Refactorizado: en vez de return-temprano, usamos if/else.
-   */
+  //guarda los datos personales
   saveProfile(): void {
     const userId = this.authService.getCurrentUserId();
 
@@ -129,6 +127,7 @@ export class ProfileComponent implements OnInit {
         this.saveSuccess = true;
         this.userInitials = this.buildInitials(this.form.name);
 
+        //telefono, ciudad y bio solo en localStorage, el backend no los tiene
         localStorage.setItem('user_name', res.name ?? this.form.name);
         localStorage.setItem('user_mail', res.mail ?? this.form.mail);
         localStorage.setItem('profile_extra_data', JSON.stringify({
@@ -146,6 +145,7 @@ export class ProfileComponent implements OnInit {
     });
   }
 
+  //vuelve al estado inicial del formulario
   resetForm(): void {
     if (this.user) {
       const extraData = this.getProfileExtraData();
@@ -170,10 +170,6 @@ export class ProfileComponent implements OnInit {
     this.authService.logout();
     this.router.navigate(['/login']);
   }
-
-  // -------------------------------------------------------
-  //  CARGAS
-  // -------------------------------------------------------
 
   private loadUser(userId: number): void {
     this.authService.getUser(userId).subscribe({
@@ -212,10 +208,7 @@ export class ProfileComponent implements OnInit {
     }
   }
 
-  /**
-   * Recupera los campos adicionales (phone/city/bio) que guardamos en localStorage.
-   * try/catch SIN return en los if (devolvemos el objeto final una sola vez).
-   */
+  //lee phone, city y bio del localStorage
   private getProfileExtraData(): { phone?: string; city?: string; bio?: string } {
     const storedData = localStorage.getItem('profile_extra_data');
     let data: { phone?: string; city?: string; bio?: string } = {};
@@ -230,6 +223,7 @@ export class ProfileComponent implements OnInit {
     return data;
   }
 
+  //iniciales del nombre para el avatar
   private buildInitials(name: string): string {
     let iniciales = '?';
     if (name) {
@@ -241,6 +235,7 @@ export class ProfileComponent implements OnInit {
     return iniciales;
   }
 
+  //cierra el menu si haces click fuera de la navbar
   @HostListener('document:click', ['$event'])
   clickOut(event: Event): void {
     const target = event.target as HTMLElement;

@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
+//endpoints publicos para invitados (sin login)
 export interface LocationSuggestion {
   id?: string | null;
   text: string;
@@ -36,6 +37,7 @@ export class PublicDataService {
     );
   }
 
+  //ruta desde la Puerta del Sol al destino
   calculateGuestRoute(sessionId: string, destination: LocationSuggestion): Observable<any> {
     return this.http.post(`${this.apiUrl}/guest/sessions/${sessionId}/routes?include=summary`, {
       origin: {

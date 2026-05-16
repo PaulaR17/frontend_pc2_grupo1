@@ -3,16 +3,9 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
-// Servicio para items, inventario y logros del usuario.
-// Endpoints:
-//   GET /items
-//   GET /users/{id}/inventory
-//   GET /users/{id}/badges
-
-// Tipos de item que admite el backend.
+//items, inventario y chapitas del usuario
 export type ItemType = 'HAT' | 'GLASSES' | 'SUIT';
 
-// Un item del catálogo de la tienda.
 export interface Item {
   id: number;
   name: string;
@@ -24,7 +17,6 @@ export interface Item {
   active: boolean;
 }
 
-// Una fila del inventario del usuario.
 export interface InventoryRow {
   id: number;
   user_id: number;
@@ -32,7 +24,6 @@ export interface InventoryRow {
   quantity: number;
 }
 
-// Un logro obtenido por el usuario.
 export interface UserBadge {
   id: number;
   user_id: number;
@@ -47,21 +38,21 @@ export class ItemService {
   private http = inject(HttpClient);
   private apiUrl = environment.apiUrl;
 
-  // Catálogo de items disponibles en la tienda.
+  //items activos del catalogo
   getCatalog(): Observable<Item[]> {
     return this.http.get<Item[]>(`${this.apiUrl}/items`, {
       headers: this.getAuthHeaders()
     });
   }
 
-  // Items que ya tiene el usuario.
+  //items que tiene el usuario
   getInventory(userId: number): Observable<InventoryRow[]> {
     return this.http.get<InventoryRow[]>(`${this.apiUrl}/users/${userId}/inventory`, {
       headers: this.getAuthHeaders()
     });
   }
 
-  // Logros conseguidos por el usuario.
+  //chapitas conseguidas
   getBadges(userId: number): Observable<UserBadge[]> {
     return this.http.get<UserBadge[]>(`${this.apiUrl}/users/${userId}/badges`, {
       headers: this.getAuthHeaders()

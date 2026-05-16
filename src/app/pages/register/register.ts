@@ -33,11 +33,7 @@ export class RegisterComponent {
     );
   }
 
-  /**
-   * Validador a nivel de formulario: comprueba que ambas contraseñas coincidan.
-   * Devuelve null si coinciden, o el error 'mismatch' si no.
-   * (Sin return dentro de if: usamos un ternario al final.)
-   */
+  //valida que las dos contraseñas coincidan
   passwordMatchValidator(form: FormGroup) {
     const password = form.get('password')?.value;
     const confirmPassword = form.get('confirmPassword')?.value;
@@ -46,12 +42,13 @@ export class RegisterComponent {
     return coinciden ? null : { mismatch: true };
   }
 
-  /** Helper para el template: marca un campo como inválido si está tocado. */
+  //true si el campo esta tocado y no valida
   esInvalido(nombreCampo: string): boolean {
     const campo = this.registerForm.get(nombreCampo);
     return !!campo && campo.invalid && campo.touched;
   }
 
+  //envia el registro si el formulario esta bien
   onSubmit(): void {
     this.errorMessage = '';
     this.successMessage = '';
@@ -90,10 +87,7 @@ export class RegisterComponent {
     });
   }
 
-  /**
-   * Traduce el error HTTP en un mensaje amigable.
-   * if/else if/else encadenados, sin returns intermedios.
-   */
+  //traduce el error HTTP a un mensaje legible
   private traducirErrorRegistro(err: any): string {
     let mensaje = 'No se pudo crear la cuenta. Revisa el backend.';
 

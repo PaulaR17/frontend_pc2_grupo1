@@ -1,7 +1,4 @@
-// Centroides aproximados de los 21 distritos de Madrid.
-// Los usamos para pintar las predicciones en el mapa (la BD guarda
-// la predicción asociada al distrito, no a un punto concreto).
-
+//centroides de los 21 distritos de Madrid para pintar predicciones
 export interface DistrictCentroid {
   code: number;
   name: string;
@@ -33,7 +30,8 @@ export const MADRID_DISTRICT_CENTROIDS: DistrictCentroid[] = [
   { code: 21, name: 'Barajas',             lat: 40.4737, lon: -3.5796 },
 ];
 
-// Búsqueda rápida por código.
+//busca el centroide por codigo
 export function getCentroid(districtCode: number): DistrictCentroid | null {
-  return MADRID_DISTRICT_CENTROIDS.find(d => d.code === districtCode) || null;
+  const encontrado = MADRID_DISTRICT_CENTROIDS.find(d => d.code === districtCode);
+  return encontrado ?? null;
 }

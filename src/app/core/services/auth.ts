@@ -4,16 +4,16 @@ import { Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
 
+//login, registro y sesion en localStorage con JWT
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
-
-  // Leemos la URL del backend desde environment.ts (un único sitio).
   private apiUrl = environment.apiUrl;
 
+  //hace login y guarda sesion
   login(data: { mail: string; password: string }): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/login`, data).pipe(
       tap((response: any) => {
@@ -22,6 +22,7 @@ export class AuthService {
     );
   }
 
+  //registra y guarda sesion
   register(data: {
     name: string;
     mail: string;
@@ -35,30 +36,35 @@ export class AuthService {
     );
   }
 
+  //datos del usuario actual
   me(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/me`, {
       headers: this.getAuthHeaders()
     });
   }
 
+  //datos de un usuario por id
   getUser(userId: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/users/${userId}`, {
       headers: this.getAuthHeaders()
     });
   }
 
+  //actualiza nombre o email
   updateUser(userId: number, data: any): Observable<any> {
     return this.http.put<any>(`${this.apiUrl}/users/${userId}`, data, {
       headers: this.getAuthHeaders()
     });
   }
 
+  //invalida el token en el backend
   logoutRequest(): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/logout`, {}, {
       headers: this.getAuthHeaders()
     });
   }
 
+  //limpia la sesion local y manda al login
   logout(): void {
     localStorage.clear();
     sessionStorage.clear();
@@ -75,7 +81,13 @@ export class AuthService {
 
   getCurrentUserId(): number | null {
     const rawId = localStorage.getItem('user_id');
-    return rawId ? Number(rawId) : null;
+    let id: number | null = null;
+
+    if (rawId) {
+      id = Number(rawId);
+    }
+
+    return id;
   }
 
   getCurrentUserRole(): string | null {
@@ -86,6 +98,7 @@ export class AuthService {
     return localStorage.getItem('token');
   }
 
+  //cabeceras con el JWT
   getAuthHeaders(): HttpHeaders {
     const token = this.getCurrentToken() || '';
 
@@ -94,6 +107,7 @@ export class AuthService {
     });
   }
 
+  //guarda token y datos basicos en localStorage
   private saveSession(response: any): void {
     localStorage.clear();
 

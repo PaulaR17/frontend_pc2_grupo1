@@ -3,27 +3,11 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
-// ============================================================
-//  Servicio para las llamadas del panel de administración.
-//  Centraliza:
-//    - GET    /admin/dashboard          (totales)
-//    - GET    /incidents                (listado público)
-//    - POST   /admin/incidents          (crear)
-//    - PUT    /admin/incidents/{id}     (editar)
-//    - DELETE /admin/incidents/{id}     (cerrar / soft delete)
-//    - POST   /admin/predictions/run    (ejecutar predicciones)
-//    - GET    /admin/users              (listado de usuarios)
-//    - PUT    /admin/users/{id}         (editar usuario)
-//    - DELETE /admin/users/{id}         (desactivar usuario)
-// ============================================================
-
-// Tipos de incidencia que admite el backend.
+//llamadas del panel de administracion
 export type IncidentType = 'ACCIDENT' | 'ROADWORK' | 'EVENT';
 
-// Roles posibles del usuario.
 export type UserRole = 'USER' | 'ADMIN';
 
-// Un usuario tal como lo devuelve /admin/users.
 export interface AdminUser {
   id: number;
   name: string;
@@ -33,8 +17,7 @@ export interface AdminUser {
   created_at?: string;
 }
 
-// Lo que enviamos al backend al editar un usuario.
-// Todos los campos son opcionales (PATCH-style).
+//campos opcionales para edicion parcial
 export interface AdminUserPayload {
   name?: string;
   mail?: string;
@@ -42,7 +25,6 @@ export interface AdminUserPayload {
   status?: boolean;
 }
 
-// Lo que devuelve el endpoint GET /admin/dashboard
 export interface DashboardData {
   users_total: number;
   users_active: number;
@@ -51,7 +33,6 @@ export interface DashboardData {
   incidents_active: number;
 }
 
-// Representación de una incidencia.
 export interface IncidentSummary {
   id: number;
   type: IncidentType;
@@ -62,7 +43,6 @@ export interface IncidentSummary {
   lon: number;
 }
 
-// Datos que enviamos al backend al crear o editar.
 export interface IncidentPayload {
   type: IncidentType;
   lat: number;
@@ -79,19 +59,18 @@ export class AdminService {
   private http = inject(HttpClient);
   private apiUrl = environment.apiUrl;
 
-  // Métricas globales para las cards y los gráficos.
+  //totales para las cards del dashboard
   getDashboard(): Observable<DashboardData> {
     return this.http.get<DashboardData>(`${this.apiUrl}/admin/dashboard`, {
       headers: this.getAuthHeaders()
     });
   }
 
-  // Listado público de incidencias.
+  //listado publico de incidencias
   getIncidents(): Observable<IncidentSummary[]> {
     return this.http.get<IncidentSummary[]>(`${this.apiUrl}/incidents`);
   }
 
-  // Crea una nueva incidencia.
   createIncident(payload: IncidentPayload): Observable<IncidentSummary> {
     return this.http.post<IncidentSummary>(
       `${this.apiUrl}/admin/incidents`,
@@ -100,7 +79,6 @@ export class AdminService {
     );
   }
 
-  // Actualiza una incidencia existente.
   updateIncident(incidentId: number, payload: Partial<IncidentPayload>): Observable<IncidentSummary> {
     return this.http.put<IncidentSummary>(
       `${this.apiUrl}/admin/incidents/${incidentId}`,
@@ -109,7 +87,7 @@ export class AdminService {
     );
   }
 
-  // Cierra una incidencia (soft delete: pone active=false).
+  //soft delete, deja active=false
   deleteIncident(incidentId: number): Observable<any> {
     return this.http.delete(
       `${this.apiUrl}/admin/incidents/${incidentId}`,
@@ -117,7 +95,7 @@ export class AdminService {
     );
   }
 
-  // Lanza el cálculo de predicciones en el backend.
+  //dispara el calculo de predicciones (PC1)
   runPredictions(): Observable<any> {
     return this.http.post(
       `${this.apiUrl}/admin/predictions/run`,
@@ -126,25 +104,19 @@ export class AdminService {
     );
   }
 
-  // -------------------------------------------------------
-  //  GESTIÓN DE USUARIOS
-  // -------------------------------------------------------
-
-  // Lista todos los usuarios.
   getUsers(): Observable<AdminUser[]> {
     return this.http.get<AdminUser[]>(`${this.apiUrl}/admin/users`, {
       headers: this.getAuthHeaders()
     });
   }
 
-  // Detalle de un usuario (con perfil y vehículos).
+  //detalle con perfil y vehiculos
   getUserDetail(userId: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/admin/users/${userId}`, {
       headers: this.getAuthHeaders()
     });
   }
 
-  // Actualiza datos de un usuario.
   updateUser(userId: number, payload: AdminUserPayload): Observable<AdminUser> {
     return this.http.put<AdminUser>(
       `${this.apiUrl}/admin/users/${userId}`,
@@ -153,7 +125,7 @@ export class AdminService {
     );
   }
 
-  // Desactiva un usuario (no se borra, solo status=false).
+  //no borra, solo pone status=false
   deactivateUser(userId: number): Observable<any> {
     return this.http.delete(
       `${this.apiUrl}/admin/users/${userId}`,
@@ -161,7 +133,6 @@ export class AdminService {
     );
   }
 
-  // Cabeceras con el JWT almacenado en localStorage.
   private getAuthHeaders(): HttpHeaders {
     const token = localStorage.getItem('token') || '';
     return new HttpHeaders({

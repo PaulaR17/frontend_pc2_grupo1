@@ -3,11 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
-// Página "Recuperar contraseña".
-// De momento es un placeholder: muestra un mensaje al usuario
-// indicándole que la recuperación se gestiona por correo.
-// Cuando el backend implemente /recovery se llamará desde aquí.
-
+//recuperacion de contraseña, todavia sin endpoint en el backend
 @Component({
   selector: 'app-recovery',
   standalone: true,
@@ -20,8 +16,7 @@ export class RecoveryComponent {
   enviado = false;
   errorMessage = '';
 
-  // Simula el envío de la petición.
-  // Cuando exista el endpoint, aquí llamaremos al backend.
+  //comprueba el correo y marca como enviado
   enviarSolicitud(): void {
     this.errorMessage = '';
 

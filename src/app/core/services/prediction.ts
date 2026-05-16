@@ -3,10 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
-// Servicio para consultar predicciones generadas por PC1.
-// Las predicciones son el resultado del modelo de ML aplicado a
-// cada (distrito, día). El frontend las pinta en el mapa.
-
+//lee las predicciones de PC1 desde la BD
 export type PredictionLevel = 'BAJO' | 'MEDIO' | 'ALTO';
 
 export interface Prediction {
@@ -27,8 +24,7 @@ export class PredictionService {
   private http = inject(HttpClient);
   private apiUrl = environment.apiUrl;
 
-  // Listado con filtros opcionales (target, fecha, nivel).
-  // Por defecto el backend devuelve solo el lote más reciente.
+  //listado filtrado, por defecto el ultimo lote
   getPredictions(filtros: {
     target_type?: string;
     for_date?: string;
@@ -58,12 +54,12 @@ export class PredictionService {
     return this.http.get<Prediction[]>(`${this.apiUrl}/predictions${query}`);
   }
 
-  // Última predicción global (la más reciente generada).
+  //la mas reciente
   getLatest(): Observable<Prediction | null> {
     return this.http.get<Prediction | null>(`${this.apiUrl}/predictions/latest`);
   }
 
-  // Últimas N predicciones para un distrito concreto.
+  //predicciones de un distrito
   getByDistrict(district: number): Observable<Prediction[]> {
     return this.http.get<Prediction[]>(`${this.apiUrl}/predictions/districts/${district}`);
   }

@@ -8,6 +8,7 @@ import { PredictionService, Prediction, PredictionLevel } from '../../core/servi
 import { getCentroid } from '../../core/services/madrid-districts';
 import * as L from 'leaflet';
 
+//home publico de invitados con mapa, predicciones y buscador
 @Component({
   selector: 'app-public-home',
   standalone: true,
@@ -45,7 +46,6 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
   private predictionsLayer: L.LayerGroup = L.layerGroup();
   private searchTimer: any = null;
 
-  // Estado del toggle "Mostrar predicciones".
   mostrarPredicciones = false;
   prediccionesCargadas: Prediction[] = [];
 
@@ -57,14 +57,7 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
     this.initMap();
   }
 
-  // -------------------------------------------------------
-  //  SESIÓN DE INVITADO
-  // -------------------------------------------------------
-
-  /**
-   * Crea o recupera una sesión de invitado.
-   * Refactorizado a if/else (sin return dentro del if).
-   */
+  //usa la sesion guardada o crea una nueva
   private startGuestSession(): void {
     const storedGuestId = localStorage.getItem('guest_id');
 
@@ -92,6 +85,7 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
     });
   }
 
+  //si caduco se crea otra sesion
   private checkQuota(sessionId: string): void {
     this.dataService.getQuota(sessionId).subscribe({
       next: (res: any) => {
@@ -100,7 +94,6 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
         this.maxSearches = res.max ?? 4;
       },
       error: (err: any) => {
-        // Si la sesión guardada ya no es válida, generamos una nueva.
         localStorage.removeItem('guest_id');
         this.guestId = null;
         this.crearSesionNueva();
@@ -109,10 +102,7 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
     });
   }
 
-  // -------------------------------------------------------
-  //  MAPA
-  // -------------------------------------------------------
-
+  //arranca Leaflet y pinta las incidencias
   private initMap(): void {
     this.map = L.map('map', {
       center: [40.4167, -3.7033],
@@ -123,18 +113,11 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
     this.zoneLayer.addTo(this.map);
     this.incidentsLayer.addTo(this.map);
-    // La capa de predicciones se añade solo si el usuario activa el toggle.
-
-    // Cargamos las incidencias activas al abrir la pantalla.
+    //la capa de predicciones solo se mete al activar el toggle
     this.cargarIncidencias();
   }
 
-  // -------------------------------------------------------
-  //  CAPA DE PREDICCIONES (PC1)
-  // -------------------------------------------------------
-
-  // Toggle desde el HTML. Carga las predicciones la primera vez
-  // que se activa y añade/quita la capa del mapa según corresponda.
+  //activa o desactiva la capa de predicciones
   togglePredicciones(): void {
     this.mostrarPredicciones = !this.mostrarPredicciones;
 
@@ -159,8 +142,7 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
     });
   }
 
-  // Pinta un círculo grande por cada predicción usando el centroide
-  // del distrito y el color del nivel (BAJO/MEDIO/ALTO).
+  //pinta un circulo por distrito segun el nivel
   private dibujarPredicciones(predicciones: Prediction[]): void {
     this.predictionsLayer.clearLayers();
 
@@ -209,26 +191,19 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
     `;
   }
 
-  // -------------------------------------------------------
-  //  CAPA DE INCIDENCIAS
-  // -------------------------------------------------------
-
-  // Pide al backend las incidencias y pinta cada una en el mapa.
   private cargarIncidencias(): void {
     this.adminService.getIncidents().subscribe({
       next: (lista) => {
         this.dibujarIncidencias(lista || []);
       },
       error: () => {
-        // No mostramos error al usuario: si fallan, simplemente
-        // el mapa no muestra incidencias. Lo dejamos en consola.
+        //si fallan, el mapa tira igual
         console.warn('No se pudieron cargar las incidencias.');
       }
     });
   }
 
-  // Pinta cada incidencia como un círculo de color en el mapa.
-  // Solo se muestran las que están activas.
+  //solo pinta las activas
   private dibujarIncidencias(incidencias: IncidentSummary[]): void {
     this.incidentsLayer.clearLayers();
 
@@ -250,7 +225,6 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
     }
   }
 
-  // Color del marcador según el tipo de incidencia.
   private colorIncidencia(tipo: IncidentType): string {
     let color = '#6c757d';
 
@@ -265,7 +239,6 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
     return color;
   }
 
-  // Contenido HTML del popup que aparece al pulsar la incidencia.
   private popupIncidencia(inc: IncidentSummary): string {
     let etiqueta: string = inc.type;
 
@@ -283,10 +256,7 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
     return `<b>${titulo}</b><br><small>${etiqueta}</small><br>${descripcion}`;
   }
 
-  // -------------------------------------------------------
-  //  BÚSQUEDA Y SUGERENCIAS
-  // -------------------------------------------------------
-
+  //debounce de 250 ms al teclear
   onSearchInput(): void {
     this.selectedLocation = null;
     this.notificationMessage = '';
@@ -297,7 +267,6 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
       clearTimeout(this.searchTimer);
     }
 
-    // Debounce: esperamos 250 ms antes de pedir sugerencias
     this.searchTimer = setTimeout(() => {
       this.loadSuggestions(query);
     }, 250);
@@ -329,10 +298,7 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
     });
   }
 
-  /**
-   * Decide qué hacer al pulsar el botón de búsqueda.
-   * Refactorizado: una sola cadena if / else if / else, sin returns dentro.
-   */
+  //gestiona el click del boton buscar
   onSearch(): void {
     const query = this.searchQuery.trim();
 
@@ -345,13 +311,12 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
     } else if (this.selectedLocation) {
       this.calculateRouteTo(this.selectedLocation);
     } else if (this.locationSuggestions.length > 0) {
-      // Si ya hay sugerencias, cogemos la primera como destino.
+      //tiramos con la primera sugerencia
       this.selectedLocation = this.locationSuggestions[0];
       this.searchQuery = this.selectedLocation.text;
       this.mostrarSugerencias = false;
       this.calculateRouteTo(this.selectedLocation);
     } else {
-      // No hay sugerencias todavía: pedimos al backend.
       this.buscarYCalcular(query);
     }
   }
@@ -384,10 +349,6 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
     this.previewLocationOnMap(suggestion);
   }
 
-  // -------------------------------------------------------
-  //  CÁLCULO DE RUTA
-  // -------------------------------------------------------
-
   private calculateRouteTo(destination: LocationSuggestion): void {
     if (!this.guestId) {
       this.showNotification('No hay sesión de invitado activa.', 'error');
@@ -414,6 +375,7 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
       error: (err: any) => {
         this.loadingRoute = false;
 
+        //429 = cuota agotada, mostramos el modal
         if (err.status === 429) {
           this.showLimitModal = true;
         } else {
@@ -424,10 +386,6 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
       }
     });
   }
-
-  // -------------------------------------------------------
-  //  PINTAR EN EL MAPA
-  // -------------------------------------------------------
 
   private previewLocationOnMap(location: LocationSuggestion): void {
     this.zoneLayer.clearLayers();
@@ -457,10 +415,6 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
       .openPopup();
   }
 
-  // -------------------------------------------------------
-  //  HELPERS PARA EL TEMPLATE
-  // -------------------------------------------------------
-
   getSuggestionTitle(suggestion: LocationSuggestion): string {
     return suggestion.name || suggestion.text;
   }
@@ -485,7 +439,7 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
     }, 4500);
   }
 
-  /** Cierra la lista de sugerencias si el usuario clica fuera del buscador. */
+  //cierra sugerencias al click fuera del buscador
   @HostListener('document:click', ['$event'])
   clickOut(event: Event): void {
     const target = event.target as HTMLElement;
