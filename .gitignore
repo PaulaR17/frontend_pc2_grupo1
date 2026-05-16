@@ -1,0 +1,29 @@
+# Dependencias instaladas
+node_modules/
+
+# Build de produccion
+dist/
+
+# Cache de Angular
+.angular/
+.nx/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor / SO
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Variables de entorno con secretos (los environment.*.ts publicos sí van)
+.env
+.env.local
+
+# Tests
+/coverage

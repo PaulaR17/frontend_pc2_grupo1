@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -10,7 +11,8 @@ export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
 
-  private apiUrl = 'http://127.0.0.1:8000/api';
+  // Leemos la URL del backend desde environment.ts (un único sitio).
+  private apiUrl = environment.apiUrl;
 
   login(data: { mail: string; password: string }): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/login`, data).pipe(
@@ -108,9 +110,4 @@ export class AuthService {
       localStorage.setItem('user_role', response.user.rol ?? 'USER');
     }
   }
-  getAdminDashboard(): Observable<any> {
-  return this.http.get<any>(`${this.apiUrl}/admin/dashboard`, {
-    headers: this.getAuthHeaders()
-  });
-}
 }

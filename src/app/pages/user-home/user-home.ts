@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth';
 import { PublicDataService } from '../../core/services/public-data';
+import { AdminService, IncidentSummary, IncidentType } from '../../core/services/admin';
 import * as L from 'leaflet';
 
 interface SavedRoute {
@@ -24,6 +25,7 @@ interface SavedRoute {
 export class UserHomeComponent implements OnInit, AfterViewInit {
   private authService = inject(AuthService);
   private dataService = inject(PublicDataService);
+  private adminService = inject(AdminService);
   private router = inject(Router);
 
   user: any = null;
@@ -50,6 +52,7 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
 
   private map!: L.Map;
   private zoneLayer: L.LayerGroup = L.layerGroup();
+  private incidentsLayer: L.LayerGroup = L.layerGroup();
 
   ngOnInit(): void {
     this.cargarUsuarioActual();
@@ -115,6 +118,77 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
     this.zoneLayer.addTo(this.map);
+    this.incidentsLayer.addTo(this.map);
+
+    // Pintamos las incidencias activas en el mapa.
+    this.cargarIncidencias();
+  }
+
+  // -------------------------------------------------------
+  //  CAPA DE INCIDENCIAS
+  // -------------------------------------------------------
+
+  private cargarIncidencias(): void {
+    this.adminService.getIncidents().subscribe({
+      next: (lista) => {
+        this.dibujarIncidencias(lista || []);
+      },
+      error: () => {
+        console.warn('No se pudieron cargar las incidencias.');
+      }
+    });
+  }
+
+  private dibujarIncidencias(incidencias: IncidentSummary[]): void {
+    this.incidentsLayer.clearLayers();
+
+    for (const inc of incidencias) {
+      if (inc.active) {
+        const color = this.colorIncidencia(inc.type);
+        const popup = this.popupIncidencia(inc);
+
+        L.circleMarker([inc.lat, inc.lon], {
+          radius: 9,
+          color: '#ffffff',
+          weight: 2,
+          fillColor: color,
+          fillOpacity: 0.85
+        })
+          .bindPopup(popup)
+          .addTo(this.incidentsLayer);
+      }
+    }
+  }
+
+  private colorIncidencia(tipo: IncidentType): string {
+    let color = '#6c757d';
+
+    if (tipo === 'ACCIDENT') {
+      color = '#dc3545';
+    } else if (tipo === 'ROADWORK') {
+      color = '#f59e0b';
+    } else if (tipo === 'EVENT') {
+      color = '#0dcaf0';
+    }
+
+    return color;
+  }
+
+  private popupIncidencia(inc: IncidentSummary): string {
+    let etiqueta: string = inc.type;
+
+    if (inc.type === 'ACCIDENT') {
+      etiqueta = 'Accidente';
+    } else if (inc.type === 'ROADWORK') {
+      etiqueta = 'Obras';
+    } else if (inc.type === 'EVENT') {
+      etiqueta = 'Evento';
+    }
+
+    const titulo = inc.title ? inc.title : etiqueta;
+    const descripcion = inc.description ? inc.description : '';
+
+    return `<b>${titulo}</b><br><small>${etiqueta}</small><br>${descripcion}`;
   }
 
   // -------------------------------------------------------

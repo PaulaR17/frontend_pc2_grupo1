@@ -3,6 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { PublicDataService, LocationSuggestion } from '../../core/services/public-data';
+import { AdminService, IncidentSummary, IncidentType } from '../../core/services/admin';
+import { PredictionService, Prediction, PredictionLevel } from '../../core/services/prediction';
+import { getCentroid } from '../../core/services/madrid-districts';
 import * as L from 'leaflet';
 
 @Component({
@@ -14,6 +17,8 @@ import * as L from 'leaflet';
 })
 export class PublicHomeComponent implements OnInit, AfterViewInit {
   private dataService = inject(PublicDataService);
+  private adminService = inject(AdminService);
+  private predictionService = inject(PredictionService);
 
   guestId: string | null = null;
 
@@ -36,7 +41,13 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
 
   private map!: L.Map;
   private zoneLayer: L.LayerGroup = L.layerGroup();
+  private incidentsLayer: L.LayerGroup = L.layerGroup();
+  private predictionsLayer: L.LayerGroup = L.layerGroup();
   private searchTimer: any = null;
+
+  // Estado del toggle "Mostrar predicciones".
+  mostrarPredicciones = false;
+  prediccionesCargadas: Prediction[] = [];
 
   ngOnInit(): void {
     this.startGuestSession();
@@ -111,6 +122,165 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
     this.zoneLayer.addTo(this.map);
+    this.incidentsLayer.addTo(this.map);
+    // La capa de predicciones se añade solo si el usuario activa el toggle.
+
+    // Cargamos las incidencias activas al abrir la pantalla.
+    this.cargarIncidencias();
+  }
+
+  // -------------------------------------------------------
+  //  CAPA DE PREDICCIONES (PC1)
+  // -------------------------------------------------------
+
+  // Toggle desde el HTML. Carga las predicciones la primera vez
+  // que se activa y añade/quita la capa del mapa según corresponda.
+  togglePredicciones(): void {
+    this.mostrarPredicciones = !this.mostrarPredicciones;
+
+    if (this.mostrarPredicciones) {
+      this.predictionsLayer.addTo(this.map);
+      this.cargarPredicciones();
+    } else {
+      this.map.removeLayer(this.predictionsLayer);
+    }
+  }
+
+  private cargarPredicciones(): void {
+    this.predictionService.getPredictions({ limit: 500 }).subscribe({
+      next: (lista) => {
+        this.prediccionesCargadas = lista || [];
+        this.dibujarPredicciones(this.prediccionesCargadas);
+      },
+      error: () => {
+        console.warn('No se pudieron cargar las predicciones.');
+        this.prediccionesCargadas = [];
+      }
+    });
+  }
+
+  // Pinta un círculo grande por cada predicción usando el centroide
+  // del distrito y el color del nivel (BAJO/MEDIO/ALTO).
+  private dibujarPredicciones(predicciones: Prediction[]): void {
+    this.predictionsLayer.clearLayers();
+
+    for (const pred of predicciones) {
+      const centroide = getCentroid(pred.district);
+
+      if (centroide) {
+        const color = this.colorPrediccion(pred.level);
+        const popup = this.popupPrediccion(pred, centroide.name);
+
+        L.circleMarker([centroide.lat, centroide.lon], {
+          radius: 16,
+          color: '#ffffff',
+          weight: 2,
+          fillColor: color,
+          fillOpacity: 0.55
+        })
+          .bindPopup(popup)
+          .addTo(this.predictionsLayer);
+      }
+    }
+  }
+
+  private colorPrediccion(nivel: PredictionLevel): string {
+    let color = '#22c55e';
+
+    if (nivel === 'ALTO') {
+      color = '#dc2626';
+    } else if (nivel === 'MEDIO') {
+      color = '#f59e0b';
+    } else if (nivel === 'BAJO') {
+      color = '#22c55e';
+    }
+
+    return color;
+  }
+
+  private popupPrediccion(pred: Prediction, nombreDistrito: string): string {
+    const probabilidad = Math.round(pred.probability * 100);
+
+    return `
+      <b>${nombreDistrito}</b><br>
+      <small>Predicción para ${pred.for_date}</small><br>
+      Nivel: <b>${pred.level}</b> (${probabilidad}%)<br>
+      <small>Objetivo: ${pred.target_type}</small>
+    `;
+  }
+
+  // -------------------------------------------------------
+  //  CAPA DE INCIDENCIAS
+  // -------------------------------------------------------
+
+  // Pide al backend las incidencias y pinta cada una en el mapa.
+  private cargarIncidencias(): void {
+    this.adminService.getIncidents().subscribe({
+      next: (lista) => {
+        this.dibujarIncidencias(lista || []);
+      },
+      error: () => {
+        // No mostramos error al usuario: si fallan, simplemente
+        // el mapa no muestra incidencias. Lo dejamos en consola.
+        console.warn('No se pudieron cargar las incidencias.');
+      }
+    });
+  }
+
+  // Pinta cada incidencia como un círculo de color en el mapa.
+  // Solo se muestran las que están activas.
+  private dibujarIncidencias(incidencias: IncidentSummary[]): void {
+    this.incidentsLayer.clearLayers();
+
+    for (const inc of incidencias) {
+      if (inc.active) {
+        const color = this.colorIncidencia(inc.type);
+        const popup = this.popupIncidencia(inc);
+
+        L.circleMarker([inc.lat, inc.lon], {
+          radius: 9,
+          color: '#ffffff',
+          weight: 2,
+          fillColor: color,
+          fillOpacity: 0.85
+        })
+          .bindPopup(popup)
+          .addTo(this.incidentsLayer);
+      }
+    }
+  }
+
+  // Color del marcador según el tipo de incidencia.
+  private colorIncidencia(tipo: IncidentType): string {
+    let color = '#6c757d';
+
+    if (tipo === 'ACCIDENT') {
+      color = '#dc3545';
+    } else if (tipo === 'ROADWORK') {
+      color = '#f59e0b';
+    } else if (tipo === 'EVENT') {
+      color = '#0dcaf0';
+    }
+
+    return color;
+  }
+
+  // Contenido HTML del popup que aparece al pulsar la incidencia.
+  private popupIncidencia(inc: IncidentSummary): string {
+    let etiqueta: string = inc.type;
+
+    if (inc.type === 'ACCIDENT') {
+      etiqueta = 'Accidente';
+    } else if (inc.type === 'ROADWORK') {
+      etiqueta = 'Obras';
+    } else if (inc.type === 'EVENT') {
+      etiqueta = 'Evento';
+    }
+
+    const titulo = inc.title ? inc.title : etiqueta;
+    const descripcion = inc.description ? inc.description : '';
+
+    return `<b>${titulo}</b><br><small>${etiqueta}</small><br>${descripcion}`;
   }
 
   // -------------------------------------------------------

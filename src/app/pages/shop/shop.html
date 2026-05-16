@@ -1,0 +1,150 @@
+<!--
+  Página "Tienda" - EcoTraffic
+  Tres pestañas: catálogo de items, inventario del usuario y logros.
+-->
+<div class="d-flex flex-column vh-100 bg-light">
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-dark bg-eco-dark px-3">
+    <span class="navbar-brand logo-eco text-white fs-5 mb-0">
+      ECO<span>TRAFFIC</span>
+    </span>
+    <button class="btn btn-sm btn-outline-light" (click)="volver()">
+      Volver
+    </button>
+  </nav>
+
+  <!-- Contenido -->
+  <main class="flex-grow-1 overflow-auto p-3 p-md-4">
+    <div class="container" style="max-width: 960px;">
+
+      <!-- Cabecera -->
+      <div class="mb-4">
+        <h1 class="h3 fw-bold text-eco-dark mb-1">Tienda</h1>
+        <p class="text-muted mb-0">
+          Personaliza tu mascota y revisa tus logros.
+        </p>
+      </div>
+
+      <!-- Estado de carga -->
+      <div class="text-center py-5" *ngIf="loading">
+        <div class="spinner-border text-success" role="status"></div>
+        <p class="text-muted mt-2 mb-0">Cargando tienda...</p>
+      </div>
+
+      <!-- Error -->
+      <div class="alert alert-danger" *ngIf="errorMessage && !loading">
+        {{ errorMessage }}
+      </div>
+
+      <!-- Pestañas -->
+      <ul class="nav nav-pills mb-3" *ngIf="!loading && !errorMessage">
+        <li class="nav-item">
+          <button class="nav-link"
+                  [class.active]="pestanaActiva === 'catalogo'"
+                  (click)="cambiarPestana('catalogo')">
+            Catálogo
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link"
+                  [class.active]="pestanaActiva === 'inventario'"
+                  (click)="cambiarPestana('inventario')">
+            Mi inventario
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link"
+                  [class.active]="pestanaActiva === 'chapitas'"
+                  (click)="cambiarPestana('chapitas')">
+            Mis chapitas
+          </button>
+        </li>
+      </ul>
+
+      <!-- ================= CATÁLOGO ================= -->
+      <div *ngIf="!loading && pestanaActiva === 'catalogo'">
+        <div class="row g-3">
+          <div class="col-12 col-sm-6 col-lg-4" *ngFor="let item of catalogo">
+            <div class="card shadow-sm border-0 h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <h5 class="card-title mb-0">{{ item.name }}</h5>
+                  <span class="badge" [ngClass]="colorRareza(item.rarity)">
+                    {{ item.rarity || 'común' }}
+                  </span>
+                </div>
+                <p class="text-muted small mb-2">
+                  {{ etiquetaTipo(item.type) }}
+                </p>
+                <p class="card-text small">
+                  {{ item.description || 'Sin descripción.' }}
+                </p>
+                <div class="fw-bold text-success">
+                  {{ item.price }} monedas
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 text-center text-muted py-4" *ngIf="catalogo.length === 0">
+            No hay items disponibles en la tienda.
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= INVENTARIO ================= -->
+      <div *ngIf="!loading && pestanaActiva === 'inventario'">
+        <div class="row g-3">
+          <div class="col-12 col-sm-6 col-lg-4" *ngFor="let fila of inventario">
+            <div class="card shadow-sm border-0 h-100">
+              <div class="card-body">
+                <ng-container *ngIf="itemDeInventario(fila) as item">
+                  <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h5 class="card-title mb-0">{{ item.name }}</h5>
+                    <span class="badge bg-success">x{{ fila.quantity }}</span>
+                  </div>
+                  <p class="text-muted small mb-2">
+                    {{ etiquetaTipo(item.type) }}
+                  </p>
+                  <p class="card-text small">
+                    {{ item.description || 'Sin descripción.' }}
+                  </p>
+                </ng-container>
+                <p class="text-muted small mb-0" *ngIf="!itemDeInventario(fila)">
+                  Item #{{ fila.item_id }} (no encontrado en el catálogo)
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 text-center text-muted py-4" *ngIf="inventario.length === 0">
+            Aún no tienes ningún item. ¡Sigue ganando XP!
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= CHAPITAS ================= -->
+      <div *ngIf="!loading && pestanaActiva === 'chapitas'">
+        <div class="row g-3">
+          <div class="col-6 col-sm-4 col-lg-3" *ngFor="let chapita of chapitas">
+            <div class="card shadow-sm border-0 h-100 text-center">
+              <div class="card-body">
+                <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-2"
+                     style="width: 70px; height: 70px; background: #d1fae5; font-size: 2rem;">
+                  🎖️
+                </div>
+                <h6 class="card-title fw-bold">{{ textoChapita(chapita.code) }}</h6>
+                <p class="text-muted small mb-0" *ngIf="chapita.earned_at">
+                  {{ chapita.earned_at | date:'dd/MM/yyyy' }}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 text-center text-muted py-4" *ngIf="chapitas.length === 0">
+            Aún no tienes ninguna chapita. ¡Sigue usando EcoTraffic!
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>

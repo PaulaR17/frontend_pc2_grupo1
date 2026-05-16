@@ -1,11 +1,16 @@
 <!--
   Admin Dashboard - EcoTraffic
-  Versión base con Bootstrap.
-  En la siguiente fase añadiremos gráficos con Chart.js + ng2-charts.
+  Layout Bootstrap:
+    - Navbar arriba
+    - Cards con métricas (números totales)
+    - 3 gráficos Chart.js:
+        * Doughnut: usuarios activos vs inactivos
+        * Bar: incidencias por tipo
+        * Bar horizontal: incidencias activas vs cerradas
 -->
 <div class="d-flex flex-column vh-100">
 
-  <!-- Navbar -->
+  <!-- ===================== NAVBAR ===================== -->
   <nav class="navbar navbar-dark bg-eco-dark px-3">
     <span class="navbar-brand logo-eco text-white fs-5 mb-0">
       ECO<span>TRAFFIC</span>
@@ -16,15 +21,46 @@
     </button>
   </nav>
 
-  <!-- Contenido -->
+  <!-- ===================== CONTENIDO ===================== -->
   <main class="flex-grow-1 overflow-auto bg-light p-3 p-md-4">
     <div class="container-fluid">
 
+      <!-- Cabecera -->
       <div class="mb-4">
         <h1 class="h3 fw-bold text-eco-dark mb-1">Panel de administración</h1>
         <p class="text-muted mb-0">
           Resumen general de usuarios e incidencias de EcoTraffic.
         </p>
+      </div>
+
+      <!-- ============== ACCIONES RÁPIDAS ADMIN ============== -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+          <h6 class="text-uppercase text-muted small fw-bold mb-3">
+            Acciones de administración
+          </h6>
+
+          <div class="d-flex flex-wrap gap-2">
+            <a routerLink="/admin/incidents" class="btn btn-outline-dark">
+              Gestionar incidencias
+            </a>
+            <a routerLink="/admin/users" class="btn btn-outline-dark">
+              Gestionar usuarios
+            </a>
+            <button class="btn btn-success"
+                    (click)="ejecutarPredicciones()"
+                    [disabled]="prediccionesEjecutando">
+              {{ prediccionesEjecutando ? 'Ejecutando...' : 'Ejecutar predicciones' }}
+            </button>
+          </div>
+
+          <div class="alert alert-success mt-3 mb-0" *ngIf="prediccionesMensaje">
+            {{ prediccionesMensaje }}
+          </div>
+          <div class="alert alert-danger mt-3 mb-0" *ngIf="prediccionesError">
+            {{ prediccionesError }}
+          </div>
+        </div>
       </div>
 
       <!-- Estado de carga -->
@@ -34,11 +70,11 @@
       </div>
 
       <!-- Error -->
-      <div class="alert alert-danger" *ngIf="errorMessage">
+      <div class="alert alert-danger" *ngIf="errorMessage && !loading">
         {{ errorMessage }}
       </div>
 
-      <!-- Tarjetas de métricas -->
+      <!-- ============== TARJETAS DE MÉTRICAS ============== -->
       <div class="row g-3" *ngIf="dashboard && !loading">
 
         <div class="col-12 col-sm-6 col-lg-3">
@@ -82,12 +118,51 @@
 
       </div>
 
-      <!-- Marcador para los gráficos (Fase 2) -->
-      <div class="card border-0 shadow-sm mt-4">
-        <div class="card-body text-center text-muted py-5">
-          <p class="mb-1 fw-bold">Gráficos próximamente</p>
-          <small>En la siguiente fase añadiremos gráficos con Chart.js (usuarios activos/inactivos, incidencias por tipo, rutas por día).</small>
+      <!-- ============== GRÁFICOS ============== -->
+      <div class="row g-3 mt-2" *ngIf="dashboard && !loading">
+
+        <!-- Doughnut: usuarios -->
+        <div class="col-12 col-lg-4">
+          <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+              <h6 class="text-uppercase text-muted small fw-bold mb-3">
+                Reparto de usuarios
+              </h6>
+              <div style="position: relative; height: 260px;">
+                <canvas id="grafico-usuarios"></canvas>
+              </div>
+            </div>
+          </div>
         </div>
+
+        <!-- Bar: incidencias por tipo -->
+        <div class="col-12 col-lg-4">
+          <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+              <h6 class="text-uppercase text-muted small fw-bold mb-3">
+                Incidencias por tipo
+              </h6>
+              <div style="position: relative; height: 260px;">
+                <canvas id="grafico-tipos"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bar horizontal: incidencias activas vs cerradas -->
+        <div class="col-12 col-lg-4">
+          <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+              <h6 class="text-uppercase text-muted small fw-bold mb-3">
+                Estado de incidencias
+              </h6>
+              <div style="position: relative; height: 260px;">
+                <canvas id="grafico-incidencias"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
 
     </div>

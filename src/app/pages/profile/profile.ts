@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth';
 import { BackendVehicle, VehicleService } from '../../core/services/vehicle';
+import { ItemService, UserBadge } from '../../core/services/item';
 
 @Component({
   selector: 'app-profile',
@@ -15,6 +16,7 @@ import { BackendVehicle, VehicleService } from '../../core/services/vehicle';
 export class ProfileComponent implements OnInit {
   private authService = inject(AuthService);
   private vehicleService = inject(VehicleService);
+  private itemService = inject(ItemService);
   private router = inject(Router);
 
   user: any = null;
@@ -22,7 +24,11 @@ export class ProfileComponent implements OnInit {
   userMenuOpen = false;
   avatarPreview: string | null = null;
 
-  activeSection: 'personal' | 'vehiculos' | 'preferencias' = 'personal';
+  activeSection: 'personal' | 'vehiculos' | 'chapitas' | 'preferencias' = 'personal';
+
+  // Chapitas (badges) que ha conseguido el usuario.
+  chapitas: UserBadge[] = [];
+  chapitasError = '';
 
   searchCount = 0;
   savedRoutesCount = 0;
@@ -51,9 +57,37 @@ export class ProfileComponent implements OnInit {
     } else {
       this.loadUser(userId);
       this.loadVehicles(userId);
+      this.loadChapitas(userId);
       this.loadLocalStats();
       this.loadPreferences();
     }
+  }
+
+  // Carga las chapitas (badges) del usuario.
+  private loadChapitas(userId: number): void {
+    this.itemService.getBadges(userId).subscribe({
+      next: (filas) => {
+        this.chapitas = filas || [];
+      },
+      error: () => {
+        this.chapitasError = 'No se pudieron cargar las chapitas.';
+      }
+    });
+  }
+
+  // Texto bonito para el código de cada chapita.
+  textoChapita(code: string): string {
+    let texto = code;
+
+    if (code === 'FIRST_ROUTE') {
+      texto = 'Primera ruta calculada';
+    } else if (code === 'ECO_DRIVER') {
+      texto = 'Conductor sostenible';
+    } else if (code === 'EXPLORER') {
+      texto = 'Explorador de Madrid';
+    }
+
+    return texto;
   }
 
   onAvatarChange(event: Event): void {

@@ -117,21 +117,21 @@
                   (click)="activeTab = 'inicio'">
             <img src="assets/Icons/home-icon.png" class="icon-sm" alt=""> Inicio
           </button>
-          <button class="btn d-flex align-items-center gap-2"
-                  [class.btn-success]="activeTab === 'rutas'"
-                  [class.btn-outline-secondary]="activeTab !== 'rutas'"
-                  (click)="activeTab = 'rutas'">
-            <img src="assets/Icons/history-icon.png" class="icon-sm" alt=""> Historial
+          <button class="btn d-flex align-items-center gap-2 btn-outline-secondary"
+                  routerLink="/routes">
+            <img src="assets/Icons/history-icon.png" class="icon-sm" alt=""> Historial y favoritos
           </button>
           <button class="btn d-flex align-items-center gap-2 btn-outline-secondary"
                   (click)="goToVehicles()">
             <img src="assets/Icons/car-icon.png" class="icon-sm" alt=""> Mis vehículos
           </button>
-          <button class="btn d-flex align-items-center gap-2"
-                  [class.btn-success]="activeTab === 'mascota'"
-                  [class.btn-outline-secondary]="activeTab !== 'mascota'"
-                  (click)="activeTab = 'mascota'">
+          <button class="btn d-flex align-items-center gap-2 btn-outline-secondary"
+                  routerLink="/pet">
             <img src="assets/Icons/pet-tab-icon.png" class="icon-sm" alt=""> Mi mascota
+          </button>
+          <button class="btn d-flex align-items-center gap-2 btn-outline-secondary"
+                  routerLink="/shop">
+            <img src="assets/Icons/bookmark-icon.png" class="icon-sm" alt=""> Tienda
           </button>
           <button class="btn d-flex align-items-center gap-2"
                   [class.btn-success]="activeTab === 'ayuda'"

@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 export type FuelType = 'electric' | 'hybrid' | 'gasoline' | 'diesel';
 
@@ -46,7 +47,7 @@ export interface VehiclePayload {
 })
 export class VehicleService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://127.0.0.1:8000/api';
+  private apiUrl = environment.apiUrl;
 
   getVehicles(userId: number): Observable<BackendVehicle[]> {
     return this.http.get<BackendVehicle[]>(`${this.apiUrl}/users/${userId}/vehicles`, {

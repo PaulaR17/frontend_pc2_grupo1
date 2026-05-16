@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 export interface LocationSuggestion {
   id?: string | null;
@@ -19,7 +20,7 @@ export interface LocationSuggestion {
 })
 export class PublicDataService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://127.0.0.1:8000/api';
+  private apiUrl = environment.apiUrl;
 
   createGuestSession(): Observable<any> {
     return this.http.post(`${this.apiUrl}/guest/sessions`, {});

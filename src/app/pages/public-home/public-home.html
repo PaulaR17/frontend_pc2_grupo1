@@ -15,6 +15,13 @@
     </span>
 
     <div class="d-flex gap-2">
+      <button class="btn btn-sm rounded-pill px-3"
+              [class.btn-warning]="mostrarPredicciones"
+              [class.btn-outline-light]="!mostrarPredicciones"
+              (click)="togglePredicciones()"
+              title="Mostrar / ocultar predicciones de incidencias">
+        {{ mostrarPredicciones ? 'Ocultar predicciones' : 'Ver predicciones' }}
+      </button>
       <button class="btn btn-outline-light btn-sm rounded-pill px-3"
               routerLink="/register">
         Registrarse

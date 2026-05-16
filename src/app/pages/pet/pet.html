@@ -1,0 +1,116 @@
+<!--
+  Página "Mi mascota" - EcoTraffic
+  Permite ver y editar la mascota virtual del usuario:
+    - Nombre (editable).
+    - Nivel y barra de experiencia.
+    - Botón para ganar XP (de prueba / gamificación).
+-->
+<div class="d-flex flex-column vh-100 bg-light">
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-dark bg-eco-dark px-3">
+    <span class="navbar-brand logo-eco text-white fs-5 mb-0">
+      ECO<span>TRAFFIC</span>
+    </span>
+    <button class="btn btn-sm btn-outline-light" (click)="volver()">
+      Volver
+    </button>
+  </nav>
+
+  <!-- Contenido -->
+  <main class="flex-grow-1 overflow-auto p-3 p-md-4">
+    <div class="container" style="max-width: 720px;">
+
+      <!-- Cabecera -->
+      <div class="mb-4 text-center">
+        <h1 class="h3 fw-bold text-eco-dark mb-1">Mi mascota</h1>
+        <p class="text-muted mb-0">
+          Cuida de tu mascota completando rutas sostenibles.
+        </p>
+      </div>
+
+      <!-- Estado de carga -->
+      <div class="text-center py-5" *ngIf="loading">
+        <div class="spinner-border text-success" role="status"></div>
+        <p class="text-muted mt-2 mb-0">Cargando mascota...</p>
+      </div>
+
+      <!-- Avisos -->
+      <div class="alert alert-danger" *ngIf="errorMessage && !loading">
+        {{ errorMessage }}
+      </div>
+      <div class="alert alert-success" *ngIf="successMessage && !loading">
+        {{ successMessage }}
+      </div>
+
+      <!-- Tarjeta principal -->
+      <div class="card shadow-sm border-0" *ngIf="pet && !loading">
+        <div class="card-body p-4">
+
+          <!-- Avatar + datos -->
+          <div class="text-center mb-4">
+            <img src="assets/Pet/LoginPet.png"
+                 alt="Mascota"
+                 class="img-fluid mb-3"
+                 style="max-height: 200px;">
+            <h2 class="h4 fw-bold text-eco-dark mb-1">{{ pet.name }}</h2>
+            <span class="badge bg-success fs-6">Nivel {{ pet.level }}</span>
+          </div>
+
+          <!-- Barra de experiencia -->
+          <div class="mb-4">
+            <div class="d-flex justify-content-between mb-1">
+              <small class="text-muted fw-semibold">Experiencia</small>
+              <small class="text-muted">
+                {{ xpActualNivel() }} / {{ XP_POR_NIVEL }} XP
+              </small>
+            </div>
+            <div class="progress" style="height: 14px;">
+              <div class="progress-bar bg-success"
+                   role="progressbar"
+                   [style.width.%]="porcentajeXp()"
+                   [attr.aria-valuenow]="porcentajeXp()"
+                   aria-valuemin="0"
+                   aria-valuemax="100">
+              </div>
+            </div>
+          </div>
+
+          <!-- Editar nombre -->
+          <div class="mb-3">
+            <label for="petName" class="form-label fw-semibold">
+              Cambiar nombre
+            </label>
+            <div class="input-group">
+              <input id="petName"
+                     type="text"
+                     class="form-control"
+                     [(ngModel)]="nombreEditable"
+                     maxlength="20"
+                     placeholder="Nombre de tu mascota">
+              <button class="btn btn-success"
+                      type="button"
+                      [disabled]="saving"
+                      (click)="guardarNombre()">
+                Guardar
+              </button>
+            </div>
+            <div class="form-text">Máximo 20 caracteres.</div>
+          </div>
+
+          <!-- Acción de gamificación -->
+          <div class="d-grid">
+            <button class="btn btn-outline-success"
+                    type="button"
+                    [disabled]="saving"
+                    (click)="sumarXp()">
+              Ganar 10 XP (modo prueba)
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>

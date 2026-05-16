@@ -1,0 +1,65 @@
+<!--
+  Página "Recuperar contraseña" - EcoTraffic
+  Placeholder mientras el backend no expone el endpoint.
+-->
+<div class="d-flex flex-column min-vh-100 bg-light">
+
+  <nav class="navbar navbar-dark bg-eco-dark px-3">
+    <a routerLink="/home" class="navbar-brand logo-eco text-white fs-5 mb-0">
+      ECO<span>TRAFFIC</span>
+    </a>
+  </nav>
+
+  <main class="flex-grow-1 d-flex align-items-center justify-content-center p-3">
+    <div class="card shadow-sm border-0" style="max-width: 480px; width: 100%;">
+      <div class="card-body p-4">
+
+        <h1 class="h4 fw-bold text-eco-dark mb-2">Recuperar contraseña</h1>
+        <p class="text-muted">
+          Introduce tu correo y te enviaremos instrucciones para
+          restablecer tu contraseña.
+        </p>
+
+        <!-- Aviso de error -->
+        <div class="alert alert-danger" *ngIf="errorMessage">
+          {{ errorMessage }}
+        </div>
+
+        <!-- Aviso de éxito -->
+        <div class="alert alert-success" *ngIf="enviado">
+          Si ese correo está registrado, recibirás un email con los pasos
+          para restablecer tu contraseña.
+        </div>
+
+        <!-- Formulario -->
+        <form (ngSubmit)="enviarSolicitud()" *ngIf="!enviado">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Correo electrónico</label>
+            <input type="email"
+                   class="form-control"
+                   [(ngModel)]="mail"
+                   name="mail"
+                   placeholder="tu@correo.com">
+          </div>
+
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-success">
+              Enviar instrucciones
+            </button>
+            <a routerLink="/login" class="btn btn-link text-muted">
+              Volver a iniciar sesión
+            </a>
+          </div>
+        </form>
+
+        <!-- Si ya está enviado, solo ofrecemos volver. -->
+        <div class="d-grid" *ngIf="enviado">
+          <a routerLink="/login" class="btn btn-outline-success">
+            Volver a iniciar sesión
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
