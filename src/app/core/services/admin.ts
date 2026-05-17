@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { BackendVehicle } from './vehicle';
 
 //llamadas del panel de administracion
 export type IncidentType = 'ACCIDENT' | 'ROADWORK' | 'EVENT';
@@ -15,6 +16,21 @@ export interface AdminUser {
   rol: UserRole;
   status: boolean;
   created_at?: string;
+}
+
+//perfil del usuario (ubicaciones casa y trabajo)
+export interface AdminUserProfile {
+  user_id: number;
+  home_lat: number | null;
+  home_lon: number | null;
+  work_lat: number | null;
+  work_lon: number | null;
+}
+
+//detalle completo: user + profile (puede ser null) + lista de vehiculos
+export interface AdminUserDetail extends AdminUser {
+  profile: AdminUserProfile | null;
+  vehicles: BackendVehicle[];
 }
 
 //campos opcionales para edicion parcial
@@ -111,8 +127,8 @@ export class AdminService {
   }
 
   //detalle con perfil y vehiculos
-  getUserDetail(userId: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/admin/users/${userId}`, {
+  getUserDetail(userId: number): Observable<AdminUserDetail> {
+    return this.http.get<AdminUserDetail>(`${this.apiUrl}/admin/users/${userId}`, {
       headers: this.getAuthHeaders()
     });
   }

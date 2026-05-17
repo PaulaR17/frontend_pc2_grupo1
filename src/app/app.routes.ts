@@ -12,6 +12,7 @@ import { RecoveryComponent } from './pages/recovery/recovery';
 import { ShopComponent } from './pages/shop/shop';
 import { RoutesComponent } from './pages/routes/routes';
 import { AdminUsersComponent } from './pages/admin-users/admin-users';
+import { AdminUserDetailComponent } from './pages/admin-user-detail/admin-user-detail';
 import { authGuard } from './core/guards/auth-guard';
 import { adminGuard } from './core/guards/admin-guard';
 
@@ -25,6 +26,7 @@ export const routes: Routes = [
   { path: 'dashboard',        component: DashboardComponent,       canActivate: [adminGuard] },
   { path: 'admin/incidents',  component: AdminIncidentsComponent,  canActivate: [adminGuard] },
   { path: 'admin/users',      component: AdminUsersComponent,      canActivate: [adminGuard] },
+  { path: 'admin/users/:id',  component: AdminUserDetailComponent, canActivate: [adminGuard] },
 
   { path: 'user-home', component: UserHomeComponent,  canActivate: [authGuard] },
   { path: 'vehicles',  component: VehiclesComponent,  canActivate: [authGuard] },

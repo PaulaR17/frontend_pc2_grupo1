@@ -173,6 +173,11 @@ export class AdminUsersComponent implements OnInit {
     this.successMessage = '';
   }
 
+  //abre la ficha completa del usuario (perfil + vehiculos)
+  verDetalle(usuario: AdminUser): void {
+    this.router.navigate(['/admin/users', usuario.id]);
+  }
+
   volverDashboard(): void {
     this.router.navigate(['/dashboard']);
   }

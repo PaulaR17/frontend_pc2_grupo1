@@ -74,6 +74,10 @@
                     <span class="badge bg-danger" *ngIf="!usuario.status">Inactivo</span>
                   </td>
                   <td class="text-end">
+                    <button class="btn btn-sm btn-outline-success me-1"
+                            (click)="verDetalle(usuario)">
+                      Ver ficha
+                    </button>
                     <button class="btn btn-sm btn-outline-primary me-1"
                             (click)="abrirFormularioEditar(usuario)">
                       Editar
