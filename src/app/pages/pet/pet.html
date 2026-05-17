@@ -4,6 +4,7 @@
     - Nombre (editable).
     - Nivel y barra de experiencia.
     - Botón para ganar XP (de prueba / gamificación).
+    - Equipamiento: gorras / gafas / trajes del inventario.
 -->
 <div class="d-flex flex-column vh-100 bg-light">
 
@@ -44,7 +45,7 @@
       </div>
 
       <!-- Tarjeta principal -->
-      <div class="card shadow-sm border-0" *ngIf="pet && !loading">
+      <div class="card shadow-sm border-0 mb-4" *ngIf="pet && !loading">
         <div class="card-body p-4">
 
           <!-- Avatar + datos -->
@@ -106,6 +107,83 @@
                     (click)="sumarXp()">
               Ganar 10 XP (modo prueba)
             </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Equipamiento: un card por cada slot -->
+      <div class="card shadow-sm border-0" *ngIf="pet && !loading">
+        <div class="card-body p-4">
+          <h3 class="h5 fw-bold text-eco-dark mb-3">Equipamiento</h3>
+          <p class="text-muted small mb-4">
+            Equipa items de tu inventario en tu mascota. Cómpralos en la
+            <a routerLink="/shop" class="text-success fw-semibold">tienda</a>.
+          </p>
+
+          <!-- un bloque por slot (Sombrero, Gafas, Traje) -->
+          <div class="mb-4" *ngFor="let slot of slots">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h4 class="h6 fw-bold text-eco-dark mb-0">
+                {{ nombreSlot(slot) }}
+              </h4>
+              <!-- si lleva algo equipado mostramos su nombre y boton desequipar -->
+              <span class="text-muted small" *ngIf="itemEquipado(slot) as equipado">
+                <span class="me-2">
+                  Llevando: <strong>{{ equipado.name }}</strong>
+                </span>
+                <button class="btn btn-sm btn-outline-secondary"
+                        type="button"
+                        [disabled]="guardandoSlot === slot"
+                        (click)="desequipar(slot)">
+                  Quitar
+                </button>
+              </span>
+              <span class="text-muted small fst-italic"
+                    *ngIf="!itemEquipado(slot)">
+                Nada equipado
+              </span>
+            </div>
+
+            <!-- items del inventario que corresponden a este slot -->
+            <div class="row g-2" *ngIf="itemsParaSlot(slot).length > 0">
+              <div class="col-12 col-sm-6 col-md-4"
+                   *ngFor="let item of itemsParaSlot(slot)">
+                <div class="border rounded p-2 h-100 d-flex flex-column"
+                     [class.border-success]="estaEquipado(item)"
+                     [class.border-2]="estaEquipado(item)">
+                  <div class="d-flex justify-content-between align-items-start mb-1">
+                    <span class="fw-semibold small">{{ item.name }}</span>
+                    <span class="badge {{ colorRareza(item.rarity) }}">
+                      {{ item.rarity }}
+                    </span>
+                  </div>
+                  <p class="text-muted small mb-2 flex-grow-1"
+                     *ngIf="item.description">
+                    {{ item.description }}
+                  </p>
+                  <button class="btn btn-sm btn-success w-100"
+                          type="button"
+                          *ngIf="!estaEquipado(item)"
+                          [disabled]="guardandoSlot === slot"
+                          (click)="equipar(item)">
+                    Equipar
+                  </button>
+                  <button class="btn btn-sm btn-outline-success w-100"
+                          type="button"
+                          *ngIf="estaEquipado(item)"
+                          disabled>
+                    Ya equipado
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- mensaje si no tiene items de este tipo -->
+            <p class="text-muted small fst-italic mb-0"
+               *ngIf="itemsParaSlot(slot).length === 0">
+              No tienes {{ nombreSlot(slot).toLowerCase() }}s en tu inventario.
+            </p>
           </div>
 
         </div>
