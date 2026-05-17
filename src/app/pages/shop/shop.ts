@@ -8,7 +8,8 @@ import {
   Item,
   InventoryRow,
   UserBadge,
-  ItemType
+  ItemType,
+  WalletInfo
 } from '../../core/services/item';
 
 //pagina "tienda" con tres pestañas:
@@ -39,6 +40,13 @@ export class ShopComponent implements OnInit {
 
   loading = true;
   errorMessage = '';
+
+  //balance actual de chapitas (suma de transactions) y aviso de operacion
+  balance = 0;
+  comprando = false;
+  itemEnCompra: number | null = null;
+  mensajeCompra = '';
+  mensajeCompraTipo: 'success' | 'error' | '' = '';
 
   ngOnInit(): void {
     this.cargarTodo();
@@ -88,13 +96,85 @@ export class ShopComponent implements OnInit {
     this.itemService.getBadges(userId).subscribe({
       next: (filas) => {
         this.chapitas = filas || [];
-        this.loading = false;
+        this.cargarWallet(userId);
       },
       error: () => {
         this.errorMessage = 'No se pudieron cargar las chapitas.';
         this.loading = false;
       }
     });
+  }
+
+  private cargarWallet(userId: number): void {
+    this.itemService.getWallet(userId).subscribe({
+      next: (info: WalletInfo) => {
+        this.balance = info.balance;
+        this.loading = false;
+      },
+      error: () => {
+        this.balance = 0;
+        this.loading = false;
+      }
+    });
+  }
+
+  //compra un item; muestra mensaje claro si falta saldo o si ya lo tenia.
+  //tras una compra correcta refresca inventario y balance
+  comprarItem(item: Item): void {
+    const userId = this.authService.getCurrentUserId();
+
+    if (userId === null) {
+      this.mensajeCompra = 'No se ha podido identificar al usuario.';
+      this.mensajeCompraTipo = 'error';
+    } else {
+      this.comprando = true;
+      this.itemEnCompra = item.id;
+      this.mensajeCompra = '';
+
+      this.itemService.purchase(userId, item.id).subscribe({
+        next: (res) => {
+          this.comprando = false;
+          this.itemEnCompra = null;
+          this.balance = res.balance;
+          this.mensajeCompra = `¡"${item.name}" comprado!`;
+          this.mensajeCompraTipo = 'success';
+          this.cargarInventarioYWallet(userId);
+        },
+        error: (err) => {
+          this.comprando = false;
+          this.itemEnCompra = null;
+          this.mensajeCompraTipo = 'error';
+          if (err?.error?.error === 'insufficient_funds') {
+            this.mensajeCompra = `Te faltan chapitas (tienes ${err.error.balance}, necesitas ${err.error.price}).`;
+          } else if (err?.error?.error === 'already_owned') {
+            this.mensajeCompra = 'Ya tienes este item en tu inventario.';
+          } else {
+            this.mensajeCompra = 'No se pudo completar la compra.';
+          }
+        }
+      });
+    }
+  }
+
+  //refresco rapido tras una compra para que se vea el item en "inventario"
+  private cargarInventarioYWallet(userId: number): void {
+    this.itemService.getInventory(userId).subscribe({
+      next: (filas) => { this.inventario = filas || []; },
+    });
+    this.itemService.getWallet(userId).subscribe({
+      next: (info) => { this.balance = info.balance; },
+    });
+  }
+
+  //true si el item ya esta en el inventario del usuario (para deshabilitar el boton)
+  yaLoTengo(item: Item): boolean {
+    let res = false;
+    for (const fila of this.inventario) {
+      if (fila.item_id === item.id) {
+        res = true;
+      }
+    }
+    return res;
   }
 
   private guardarItemsPorId(items: Item[]): void {

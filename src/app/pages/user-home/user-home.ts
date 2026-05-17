@@ -3,8 +3,16 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth';
-import { PublicDataService } from '../../core/services/public-data';
+import { PublicDataService, LocationSuggestion } from '../../core/services/public-data';
 import { AdminService, IncidentSummary, IncidentType } from '../../core/services/admin';
+import { PredictionService, Prediction, PredictionLevel } from '../../core/services/prediction';
+import { PoiService, Poi } from '../../core/services/poi';
+import { RouteService, RouteResponse, UserProfile } from '../../core/services/route';
+import { getCentroid } from '../../core/services/madrid-districts';
+import { decodePolyline } from '../../core/utils/polyline';
+import { iconoPoi } from '../../core/utils/poi-icon';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import * as L from 'leaflet';
 
 interface SavedRoute {
@@ -15,8 +23,8 @@ interface SavedRoute {
   lng: number;
 }
 
-//pagina home del usuario logueado; mapa con incidencias, buscador
-//y rutas guardadas en localStorage
+//home del usuario registrado con mapa, busqueda origen+destino, ruta real,
+//predicciones, POIs, zonas de riesgo y guardado en favoritos
 @Component({
   selector: 'app-user-home',
   standalone: true,
@@ -28,6 +36,9 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
   private authService = inject(AuthService);
   private dataService = inject(PublicDataService);
   private adminService = inject(AdminService);
+  private predictionService = inject(PredictionService);
+  private poiService = inject(PoiService);
+  private routeService = inject(RouteService);
   private router = inject(Router);
 
   user: any = null;
@@ -36,25 +47,67 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
 
   searchCount = 0;
   ecoScore = 0;
+
+  //modal de reportar incidencia
+  reporteAbierto = false;
+  reporteTipo: IncidentType = 'ACCIDENT';
+  reporteTitulo = '';
+  reporteDescripcion = '';
+  reporteEnviando = false;
+
+  //destino
   searchQuery = '';
   mostrarSugerencias = false;
+  loadingSuggestions = false;
+  locationSuggestions: LocationSuggestion[] = [];
+  selectedLocation: LocationSuggestion | null = null;
+  private searchTimer: any = null;
+
+  //origen
+  origenQuery = '';
+  mostrarSugerenciasOrigen = false;
+  loadingSuggestionsOrigen = false;
+  origenSuggestions: LocationSuggestion[] = [];
+  selectedOrigen: LocationSuggestion | null = null;
+  private origenSearchTimer: any = null;
+
+  loadingRoute = false;
+  notificationMessage = '';
+  notificationType: 'success' | 'error' | 'warning' | '' = '';
 
   activeTab: 'inicio' | 'rutas' | 'ayuda' | 'vehiculos' | 'mascota' = 'inicio';
 
   savedRoutes: SavedRoute[] = [];
 
-  //distritos de Madrid; lista estatica para los accesos rapidos
-  zonasDisponibles: string[] = [
-    'Centro', 'Arganzuela', 'Retiro', 'Salamanca', 'Chamartín', 'Tetuán',
-    'Chamberí', 'Fuencarral-El Pardo', 'Moncloa-Aravaca', 'Latina',
-    'Carabanchel', 'Usera', 'Puente de Vallecas', 'Moratalaz', 'Ciudad Lineal',
-    'Hortaleza', 'Villaverde', 'Villa de Vallecas', 'Vicálvaro',
-    'San Blas-Canillejas', 'Barajas'
-  ];
+  //perfil con ubicaciones guardadas (casa/trabajo)
+  profile: UserProfile | null = null;
+  //decide a cual de los dos campos (home/work) guardara la siguiente busqueda
+  configurandoUbicacion: 'home' | 'work' | null = null;
+
+  //ultima ruta calculada; al pulsar "guardar en favoritos" se persiste primero
+  //en historial y luego se marca como favorita
+  ultimaRuta: {
+    origin: { lat: number; lon: number; label?: string };
+    destination: { lat: number; lon: number; label?: string };
+    summary: any;
+  } | null = null;
+  guardandoFavorito = false;
 
   private map!: L.Map;
   private zoneLayer: L.LayerGroup = L.layerGroup();
   private incidentsLayer: L.LayerGroup = L.layerGroup();
+  private predictionsLayer: L.LayerGroup = L.layerGroup();
+  private poisLayer: L.LayerGroup = L.layerGroup();
+  private routeLayer: L.LayerGroup = L.layerGroup();
+  //circulos translucidos sobre los distritos peligrosos atravesados por la ruta
+  private riskLayer: L.LayerGroup = L.layerGroup();
+
+  mostrarPredicciones = false;
+  prediccionesCargadas: Prediction[] = [];
+
+  mostrarPois = false;
+  poisLoading = false;
+  private puntosRutaActual: [number, number][] = [];
 
   ngOnInit(): void {
     this.cargarUsuarioActual();
@@ -65,25 +118,36 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
     this.initMap();
   }
 
-  //carga inicial
-
   //carga el usuario actual; si no hay id en localStorage hace logout
   private cargarUsuarioActual(): void {
     const id = localStorage.getItem('user_id');
 
     if (id) {
-      this.authService.getUser(Number(id)).subscribe({
+      const userId = Number(id);
+      this.authService.getUser(userId).subscribe({
         next: (res: any) => {
           this.user = res;
           this.userInitials = this.buildInitials(res.name);
-          //si el backend aun no devuelve eco_score, simulamos uno alto
           this.ecoScore = res.eco_score ?? Math.floor(Math.random() * 40) + 60;
+          this.cargarPerfilUbicaciones(userId);
         },
         error: () => this.logout()
       });
     } else {
       this.logout();
     }
+  }
+
+  //recupera home/work del usuario para los accesos rapidos
+  private cargarPerfilUbicaciones(userId: number): void {
+    this.routeService.getProfile(userId).subscribe({
+      next: (perfil) => {
+        this.profile = perfil;
+      },
+      error: () => {
+        console.warn('No se pudo cargar el perfil del usuario.');
+      }
+    });
   }
 
   private cargarRutasGuardadas(): void {
@@ -107,6 +171,7 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
     return iniciales;
   }
 
+  //arranca Leaflet y pinta las incidencias
   private initMap(): void {
     this.map = L.map('map', {
       center: [40.4167, -3.7033],
@@ -117,11 +182,220 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
     this.zoneLayer.addTo(this.map);
     this.incidentsLayer.addTo(this.map);
+    this.routeLayer.addTo(this.map);
+    this.riskLayer.addTo(this.map);
 
     this.cargarIncidencias();
   }
 
-  //capa de incidencias
+  //dibuja la polyline de la ruta sobre el mapa; reemplaza la anterior si la habia
+  private dibujarRuta(geometry: string | null | undefined): void {
+    this.routeLayer.clearLayers();
+
+    if (geometry) {
+      const puntos = decodePolyline(geometry);
+      const hayPuntos = puntos.length > 0;
+      if (hayPuntos) {
+        const polyline = L.polyline(puntos, {
+          color: '#198754',
+          weight: 5,
+          opacity: 0.85,
+        });
+        polyline.addTo(this.routeLayer);
+        this.map.fitBounds(polyline.getBounds(), { padding: [30, 30] });
+        this.puntosRutaActual = puntos;
+        if (this.mostrarPois) {
+          this.cargarPois();
+        }
+      }
+    }
+  }
+
+  //pinta un circulo translucido sobre cada distrito de la lista de riesgos:
+  //rojo para ALTO, naranja para MEDIO, sin marca para BAJO (no satura el mapa)
+  private dibujarZonasRiesgo(zonas: Array<{ district: number; level: string; probability: number }>): void {
+    this.riskLayer.clearLayers();
+
+    for (const zona of zonas) {
+      const pintar = zona.level === 'ALTO' || zona.level === 'MEDIO';
+      const centroide = getCentroid(zona.district);
+
+      if (pintar && centroide) {
+        const color = zona.level === 'ALTO' ? '#dc3545' : '#fd7e14';
+        const popup = `<b>${centroide.name}</b><br>Riesgo: <strong>${zona.level}</strong><br>Probabilidad: ${(zona.probability * 100).toFixed(0)}%`;
+
+        L.circle([centroide.lat, centroide.lon], {
+          radius: 1500,
+          color,
+          weight: 1,
+          fillColor: color,
+          fillOpacity: 0.18,
+        })
+          .bindPopup(popup)
+          .addTo(this.riskLayer);
+      }
+    }
+  }
+
+  togglePredicciones(): void {
+    this.mostrarPredicciones = !this.mostrarPredicciones;
+
+    if (this.mostrarPredicciones) {
+      this.predictionsLayer.addTo(this.map);
+      this.cargarPredicciones();
+    } else {
+      this.map.removeLayer(this.predictionsLayer);
+    }
+  }
+
+  togglePois(): void {
+    this.mostrarPois = !this.mostrarPois;
+
+    if (this.mostrarPois) {
+      this.poisLayer.addTo(this.map);
+      this.cargarPois();
+    } else {
+      this.map.removeLayer(this.poisLayer);
+    }
+  }
+
+  refrescarPois(): void {
+    if (this.mostrarPois) {
+      this.cargarPois();
+    }
+  }
+
+  //decide donde pedir POIs: si hay ruta, en 3 puntos (inicio/medio/fin);
+  //si no, alrededor del centro del mapa
+  private cargarPois(): void {
+    this.poisLoading = true;
+
+    const centros = this.puntosBusquedaPois();
+    const llamadas = centros.map((c) =>
+      this.poiService.search(c[0], c[1], 2000).pipe(catchError(() => of([] as Poi[])))
+    );
+
+    forkJoin(llamadas).subscribe({
+      next: (resultados) => {
+        this.poisLoading = false;
+        const todos: Poi[] = ([] as Poi[]).concat(...resultados);
+        this.dibujarPois(this.dedupePois(todos));
+      },
+      error: () => {
+        this.poisLoading = false;
+        console.warn('No se pudieron cargar los POIs.');
+      }
+    });
+  }
+
+  private puntosBusquedaPois(): [number, number][] {
+    const puntos: [number, number][] = [];
+    const ruta = this.puntosRutaActual;
+    const hayRuta = ruta.length >= 2;
+
+    if (hayRuta) {
+      puntos.push(ruta[0]);
+      puntos.push(ruta[Math.floor(ruta.length / 2)]);
+      puntos.push(ruta[ruta.length - 1]);
+    } else {
+      const centro = this.map.getCenter();
+      puntos.push([centro.lat, centro.lng]);
+    }
+
+    return puntos;
+  }
+
+  //agrupa POIs en una rejilla de ~80m (3 decimales) para que el mapa
+  //no se llene de marcadores pegados que no se pueden pulsar bien
+  private dedupePois(lista: Poi[]): Poi[] {
+    const vistos = new Set<string>();
+    const unicos: Poi[] = [];
+
+    for (const poi of lista) {
+      const clave = `${poi.lat.toFixed(3)},${poi.lng.toFixed(3)}`;
+      const nuevo = !vistos.has(clave);
+      if (nuevo) {
+        vistos.add(clave);
+        unicos.push(poi);
+      }
+    }
+
+    return unicos;
+  }
+
+  //pinta cada POI con un icono distinto segun su grupo (gastronomia, ocio, turismo)
+  private dibujarPois(pois: Poi[]): void {
+    this.poisLayer.clearLayers();
+
+    for (const poi of pois) {
+      const popup = `<b>${poi.name}</b><br><small>${poi.category}</small>`;
+
+      L.marker([poi.lat, poi.lng], { icon: iconoPoi(poi.group) })
+        .bindPopup(popup)
+        .addTo(this.poisLayer);
+    }
+  }
+
+  private cargarPredicciones(): void {
+    this.predictionService.getPredictions({ limit: 500 }).subscribe({
+      next: (lista) => {
+        this.prediccionesCargadas = lista || [];
+        this.dibujarPredicciones(this.prediccionesCargadas);
+      },
+      error: () => {
+        console.warn('No se pudieron cargar las predicciones.');
+        this.prediccionesCargadas = [];
+      }
+    });
+  }
+
+  private dibujarPredicciones(predicciones: Prediction[]): void {
+    this.predictionsLayer.clearLayers();
+
+    for (const pred of predicciones) {
+      const centroide = getCentroid(pred.district);
+
+      if (centroide) {
+        const color = this.colorPrediccion(pred.level);
+        const popup = this.popupPrediccion(pred, centroide.name);
+
+        L.circleMarker([centroide.lat, centroide.lon], {
+          radius: 16,
+          color: '#ffffff',
+          weight: 2,
+          fillColor: color,
+          fillOpacity: 0.55
+        })
+          .bindPopup(popup)
+          .addTo(this.predictionsLayer);
+      }
+    }
+  }
+
+  private colorPrediccion(nivel: PredictionLevel): string {
+    let color = '#22c55e';
+
+    if (nivel === 'ALTO') {
+      color = '#dc2626';
+    } else if (nivel === 'MEDIO') {
+      color = '#f59e0b';
+    } else if (nivel === 'BAJO') {
+      color = '#22c55e';
+    }
+
+    return color;
+  }
+
+  private popupPrediccion(pred: Prediction, nombreDistrito: string): string {
+    const probabilidad = Math.round(pred.probability * 100);
+
+    return `
+      <b>${nombreDistrito}</b><br>
+      <small>Predicción para ${pred.for_date}</small><br>
+      Nivel: <b>${pred.level}</b> (${probabilidad}%)<br>
+      <small>Objetivo: ${pred.target_type}</small>
+    `;
+  }
 
   private cargarIncidencias(): void {
     this.adminService.getIncidents().subscribe({
@@ -186,88 +460,413 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
     return `<b>${titulo}</b><br><small>${etiqueta}</small><br>${descripcion}`;
   }
 
-  //busqueda y ruta
+  //debounce de 250 ms al teclear en destino
+  onSearchInput(): void {
+    this.selectedLocation = null;
+    this.notificationMessage = '';
 
-  //lanza una busqueda solo si hay texto en el input
-  onSearch(): void {
     const query = this.searchQuery.trim();
 
-    if (query !== '') {
-      this.mostrarSugerencias = false;
-      this.realizarBusqueda(query);
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+    }
+
+    this.searchTimer = setTimeout(() => {
+      this.loadSuggestions(query);
+    }, 250);
+  }
+
+  onSearchFocus(): void {
+    this.mostrarSugerencias = true;
+
+    if (this.locationSuggestions.length === 0) {
+      this.loadSuggestions(this.searchQuery.trim());
     }
   }
 
-  private realizarBusqueda(query: string): void {
-    this.dataService.searchLocation(query).subscribe({
-      next: (searchRes: any) => {
-        const destination = searchRes.results?.[0];
+  private loadSuggestions(query: string): void {
+    this.loadingSuggestions = true;
+    this.mostrarSugerencias = true;
 
-        if (destination) {
-          this.guardarYMostrarRuta(destination, query);
-        }
+    this.dataService.searchLocation(query).subscribe({
+      next: (res: any) => {
+        this.locationSuggestions = res.results ?? [];
+        this.loadingSuggestions = false;
       },
       error: () => {
-        alert('No se ha podido buscar la ubicación.');
+        this.locationSuggestions = [];
+        this.loadingSuggestions = false;
+        this.showNotification('No se pudieron cargar las sugerencias.', 'error');
       }
     });
   }
 
-  //guarda la ruta en localStorage (max 20) y la pinta en el mapa
-  private guardarYMostrarRuta(destination: any, query: string): void {
-    this.searchCount++;
+  //click del boton de buscar/calcular ruta
+  onSearch(): void {
+    const query = this.searchQuery.trim();
 
+    if (query === '') {
+      this.showNotification('Introduce una ubicación para buscar.', 'warning');
+    } else if (this.configurandoUbicacion) {
+      this.guardarUbicacionDesdeBusqueda(query);
+    } else if (this.selectedLocation) {
+      this.calculateRouteTo(this.selectedLocation);
+    } else if (this.locationSuggestions.length > 0) {
+      this.selectedLocation = this.locationSuggestions[0];
+      this.searchQuery = this.selectedLocation.text;
+      this.mostrarSugerencias = false;
+      this.calculateRouteTo(this.selectedLocation);
+    } else {
+      this.buscarYCalcular(query);
+    }
+  }
+
+  private buscarYCalcular(query: string): void {
+    this.dataService.searchLocation(query).subscribe({
+      next: (res: any) => {
+        const firstSuggestion = res.results?.[0];
+
+        if (!firstSuggestion) {
+          this.showNotification('No se encontró esa ubicación en Madrid.', 'warning');
+        } else {
+          this.selectedLocation = firstSuggestion;
+          this.searchQuery = firstSuggestion.text;
+          this.calculateRouteTo(firstSuggestion);
+        }
+      },
+      error: () => {
+        this.showNotification('Error buscando la ubicación.', 'error');
+      }
+    });
+  }
+
+  //input del origen
+  onOrigenInput(): void {
+    this.selectedOrigen = null;
+
+    const query = this.origenQuery.trim();
+
+    if (this.origenSearchTimer) {
+      clearTimeout(this.origenSearchTimer);
+    }
+
+    this.origenSearchTimer = setTimeout(() => {
+      this.loadOrigenSuggestions(query);
+    }, 250);
+  }
+
+  onOrigenFocus(): void {
+    this.mostrarSugerenciasOrigen = true;
+
+    if (this.origenSuggestions.length === 0) {
+      this.loadOrigenSuggestions(this.origenQuery.trim());
+    }
+  }
+
+  private loadOrigenSuggestions(query: string): void {
+    this.loadingSuggestionsOrigen = true;
+    this.mostrarSugerenciasOrigen = true;
+
+    this.dataService.searchLocation(query).subscribe({
+      next: (res: any) => {
+        this.origenSuggestions = res.results ?? [];
+        this.loadingSuggestionsOrigen = false;
+      },
+      error: () => {
+        this.origenSuggestions = [];
+        this.loadingSuggestionsOrigen = false;
+      }
+    });
+  }
+
+  selectOrigenSuggestion(suggestion: LocationSuggestion): void {
+    this.selectedOrigen = suggestion;
+    this.origenQuery = suggestion.text;
+    this.origenSuggestions = [];
+    this.mostrarSugerenciasOrigen = false;
+  }
+
+  selectSuggestion(suggestion: LocationSuggestion): void {
+    this.selectedLocation = suggestion;
+    this.searchQuery = suggestion.text;
+    this.locationSuggestions = [];
+    this.mostrarSugerencias = false;
+    this.previewLocationOnMap(suggestion);
+  }
+
+  //pide preview al backend y pinta polyline + zonas de riesgo
+  private calculateRouteTo(destination: LocationSuggestion): void {
+    this.loadingRoute = true;
+
+    const origenLat = this.selectedOrigen?.lat ?? 40.4167;
+    const origenLon = this.selectedOrigen?.lon ?? -3.7033;
+    const origenLabel = this.selectedOrigen?.text ?? 'Puerta del Sol';
+    const origen = { lat: origenLat, lon: origenLon, label: origenLabel };
+    const destino = { lat: destination.lat, lon: destination.lon, label: destination.text };
+
+    this.routeService.preview(origen, destino, 'driving-car').subscribe({
+      next: (routeRes: RouteResponse) => {
+        this.loadingRoute = false;
+        this.searchCount = this.searchCount + 1;
+
+        this.displayLocationOnMap(destination, routeRes.summary);
+        this.dibujarRuta(routeRes.geometry);
+        this.dibujarZonasRiesgo(routeRes.risk_zones ?? []);
+
+        this.ultimaRuta = { origin: origen, destination: destino, summary: routeRes.summary };
+        this.guardarRutaLocal(destination, routeRes.summary);
+
+        const peligros = (routeRes.risk_zones ?? []) as Array<{district: number, level: string, probability: number}>;
+        const altos = peligros.filter((z) => z.level === 'ALTO');
+        const medios = peligros.filter((z) => z.level === 'MEDIO');
+        let aviso = 'Ruta calculada correctamente.';
+        if (altos.length > 0) {
+          aviso = `Ruta calculada. Atención: ${altos.length} zona(s) con riesgo ALTO en el camino.`;
+        } else if (medios.length > 0) {
+          aviso = `Ruta calculada. ${medios.length} zona(s) con riesgo MEDIO en el camino.`;
+        }
+        const tipoAviso = altos.length > 0 ? 'warning' : 'success';
+        this.showNotification(aviso, tipoAviso);
+      },
+      error: () => {
+        this.loadingRoute = false;
+        this.displayLocationOnMap(destination, null);
+        this.showNotification('Se ha encontrado la ubicación, pero no se pudo calcular la ruta.', 'warning');
+      }
+    });
+  }
+
+  //guarda la ultima ruta en localStorage (max 20) para el historial rapido
+  private guardarRutaLocal(destination: LocationSuggestion, summary: any): void {
     const route: SavedRoute = {
-      name: destination.text ?? query,
-      distance_km: destination.distance_km ?? 0,
-      duration_min: destination.duration_min ?? 0,
+      name: destination.text ?? destination.name ?? this.searchQuery,
+      distance_km: summary?.distance_km ?? 0,
+      duration_min: summary?.duration_min ?? 0,
       lat: destination.lat,
       lng: destination.lon
     };
 
     this.savedRoutes.unshift(route);
-    localStorage.setItem('saved_routes', JSON.stringify(this.savedRoutes.slice(0, 20)));
-
-    this.displayZoneOnMap({
-      latitude: destination.lat,
-      longitude: destination.lon,
-      text: destination.text
-    });
+    this.savedRoutes = this.savedRoutes.slice(0, 20);
+    localStorage.setItem('saved_routes', JSON.stringify(this.savedRoutes));
   }
 
-  private displayZoneOnMap(zone: any): void {
+  private previewLocationOnMap(location: LocationSuggestion): void {
     this.zoneLayer.clearLayers();
+    this.map.flyTo([location.lat, location.lon], 14);
 
-    const lat = zone?.latitude ?? 40.4167;
-    const lng = zone?.longitude ?? -3.7033;
-    const text = zone?.text ?? this.searchQuery;
-
-    this.map.flyTo([lat, lng], 14);
-
-    L.marker([lat, lng])
+    L.marker([location.lat, location.lon])
       .addTo(this.zoneLayer)
-      .bindPopup(`<b>${text}</b>`)
+      .bindPopup(`<b>${location.text}</b><br>Pulsa el botón verde para calcular la ruta.`)
       .openPopup();
   }
 
-  replayRoute(route: SavedRoute): void {
-    this.displayZoneOnMap({
-      latitude: route.lat,
-      longitude: route.lng,
-      text: route.name
-    });
-    this.activeTab = 'inicio';
+  private displayLocationOnMap(location: LocationSuggestion, summary: any): void {
+    this.zoneLayer.clearLayers();
+
+    const popupLines = [`<b>${location.text}</b>`];
+
+    if (summary) {
+      popupLines.push(`Distancia: ${summary.distance_km ?? '-'} km`);
+      popupLines.push(`Duración: ${summary.duration_min ?? '-'} min`);
+    }
+
+    this.map.flyTo([location.lat, location.lon], 15);
+
+    L.marker([location.lat, location.lon])
+      .addTo(this.zoneLayer)
+      .bindPopup(popupLines.join('<br>'))
+      .openPopup();
   }
 
-  seleccionarZona(zona: string): void {
-    this.searchQuery = zona;
-    this.mostrarSugerencias = false;
-    this.onSearch();
+  //primero crea la entrada de historial via POST /routes y luego la marca
+  //como favorita en POST /users/{id}/routes/favorites
+  guardarEnFavoritos(): void {
+    const userId = this.authService.getCurrentUserId();
+
+    if (!this.ultimaRuta) {
+      this.showNotification('Primero calcula una ruta.', 'warning');
+    } else if (!userId) {
+      this.showNotification('Sesión no válida.', 'error');
+    } else {
+      this.guardandoFavorito = true;
+
+      this.routeService.calculate(userId, this.ultimaRuta.origin, this.ultimaRuta.destination, 'driving-car').subscribe({
+        next: (res: RouteResponse) => {
+          const historyId = res.history_id;
+          const reward = res.reward;
+          if (historyId) {
+            this.routeService.addFavorite(userId, historyId).subscribe({
+              next: () => {
+                this.guardandoFavorito = false;
+                let msg = 'Ruta guardada en favoritos.';
+                if (reward && reward.coins > 0) {
+                  msg = msg + ` +${reward.coins} chapitas, +${reward.xp} XP`;
+                  if (reward.level_up) {
+                    msg = msg + ` (¡nivel ${reward.new_level}!)`;
+                  }
+                }
+                this.showNotification(msg, 'success');
+              },
+              error: () => {
+                this.guardandoFavorito = false;
+                this.showNotification('No se pudo marcar la ruta como favorita.', 'error');
+              }
+            });
+          } else {
+            this.guardandoFavorito = false;
+            this.showNotification('No se pudo crear la entrada de historial.', 'error');
+          }
+        },
+        error: () => {
+          this.guardandoFavorito = false;
+          this.showNotification('Error guardando la ruta.', 'error');
+        }
+      });
+    }
+  }
+
+  //rellena el destino con la ubicacion de casa o trabajo y dispara la ruta
+  irA(tipo: 'home' | 'work'): void {
+    if (!this.profile) {
+      this.showNotification('Aún no se ha cargado tu perfil.', 'warning');
+    } else {
+      const lat = tipo === 'home' ? this.profile.home_lat : this.profile.work_lat;
+      const lon = tipo === 'home' ? this.profile.home_lon : this.profile.work_lon;
+      const etiqueta = tipo === 'home' ? 'Casa' : 'Trabajo';
+
+      if (lat === null || lat === undefined || lon === null || lon === undefined) {
+        this.showNotification(`Aún no has configurado tu ${etiqueta.toLowerCase()}.`, 'warning');
+      } else {
+        const destino: LocationSuggestion = { text: etiqueta, lat, lon };
+        this.selectedLocation = destino;
+        this.searchQuery = etiqueta;
+        this.mostrarSugerencias = false;
+        this.calculateRouteTo(destino);
+      }
+    }
+  }
+
+  //pone el buscador en modo "configurar casa/trabajo": la siguiente busqueda
+  //no calcula ruta, guarda esa ubicacion en el perfil del usuario
+  configurarUbicacion(tipo: 'home' | 'work'): void {
+    this.configurandoUbicacion = tipo;
+    this.searchQuery = '';
+    this.selectedLocation = null;
+    this.locationSuggestions = [];
+    const etiqueta = tipo === 'home' ? 'casa' : 'trabajo';
+    this.showNotification(`Busca tu ${etiqueta} y pulsa el botón verde para guardarla.`, 'warning');
+  }
+
+  cancelarConfiguracion(): void {
+    this.configurandoUbicacion = null;
+    this.searchQuery = '';
+    this.locationSuggestions = [];
+    this.notificationMessage = '';
+  }
+
+  //resuelve la ubicacion buscada y llama al endpoint de setHome/setWork
+  private guardarUbicacionDesdeBusqueda(query: string): void {
+    const userId = this.authService.getCurrentUserId();
+    const tipo = this.configurandoUbicacion;
+
+    if (!userId || !tipo) {
+      this.showNotification('Sesión no válida.', 'error');
+    } else if (this.selectedLocation) {
+      this.persistirUbicacion(userId, tipo, this.selectedLocation);
+    } else {
+      this.dataService.searchLocation(query).subscribe({
+        next: (res: any) => {
+          const first = res.results?.[0];
+          if (!first) {
+            this.showNotification('No se encontró esa ubicación.', 'warning');
+          } else {
+            this.persistirUbicacion(userId, tipo, first);
+          }
+        },
+        error: () => {
+          this.showNotification('Error buscando la ubicación.', 'error');
+        }
+      });
+    }
+  }
+
+  private persistirUbicacion(userId: number, tipo: 'home' | 'work', loc: LocationSuggestion): void {
+    const llamada = tipo === 'home'
+      ? this.routeService.setHome(userId, loc.lat, loc.lon)
+      : this.routeService.setWork(userId, loc.lat, loc.lon);
+
+    llamada.subscribe({
+      next: (perfil) => {
+        this.profile = perfil;
+        this.configurandoUbicacion = null;
+        this.searchQuery = '';
+        const etiqueta = tipo === 'home' ? 'Casa' : 'Trabajo';
+        this.showNotification(`${etiqueta} guardada en tu perfil.`, 'success');
+      },
+      error: () => {
+        this.showNotification('No se pudo guardar la ubicación.', 'error');
+      }
+    });
+  }
+
+  replayRoute(route: SavedRoute): void {
+    const destino: LocationSuggestion = { text: route.name, lat: route.lat, lon: route.lng };
+    this.selectedLocation = destino;
+    this.searchQuery = route.name;
+    this.activeTab = 'inicio';
+    this.calculateRouteTo(destino);
   }
 
   goToVehicles(): void {
     this.activeTab = 'vehiculos';
     this.router.navigate(['/vehicles']);
+  }
+
+  //abre el modal de reportar incidencia (precarga el centro del mapa como punto)
+  abrirReporte(): void {
+    this.reporteAbierto = true;
+    this.reporteTipo = 'ACCIDENT';
+    this.reporteTitulo = '';
+    this.reporteDescripcion = '';
+  }
+
+  cerrarReporte(): void {
+    this.reporteAbierto = false;
+  }
+
+  //envia la incidencia al backend usando como coords el centro actual del mapa
+  enviarReporte(): void {
+    const centro = this.map.getCenter();
+    this.reporteEnviando = true;
+
+    this.adminService.reportIncident({
+      type: this.reporteTipo,
+      lat: centro.lat,
+      lon: centro.lng,
+      title: this.reporteTitulo || null,
+      description: this.reporteDescripcion || null,
+    }).subscribe({
+      next: (res: any) => {
+        this.reporteEnviando = false;
+        this.reporteAbierto = false;
+        let msg = 'Incidencia reportada. ¡Gracias por avisar!';
+        const reward = res?.reward;
+        if (reward && reward.coins > 0) {
+          msg = msg + ` +${reward.coins} chapitas, +${reward.xp} XP`;
+          if (reward.level_up) {
+            msg = msg + ` (¡nivel ${reward.new_level}!)`;
+          }
+        }
+        this.showNotification(msg, 'success');
+        //recargamos la capa de incidencias para que la vea en el mapa al instante
+        this.cargarIncidencias();
+      },
+      error: () => {
+        this.reporteEnviando = false;
+        this.showNotification('No se pudo enviar la incidencia.', 'error');
+      },
+    });
   }
 
   toggleUserMenu(): void {
@@ -278,13 +877,38 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
     this.authService.logout();
   }
 
+  getSuggestionTitle(suggestion: LocationSuggestion): string {
+    return suggestion.name || suggestion.text;
+  }
+
+  getSuggestionSubtitle(suggestion: LocationSuggestion): string {
+    const title = this.getSuggestionTitle(suggestion);
+
+    let subtitulo = 'Madrid, España';
+    if (suggestion.text && suggestion.text !== title) {
+      subtitulo = suggestion.text.replace(title, '').replace(/^,\s*/, '').trim();
+    }
+    return subtitulo;
+  }
+
+  private showNotification(message: string, type: 'success' | 'error' | 'warning'): void {
+    this.notificationMessage = message;
+    this.notificationType = type;
+
+    setTimeout(() => {
+      this.notificationMessage = '';
+      this.notificationType = '';
+    }, 4500);
+  }
+
   //cierra menus y sugerencias si el usuario clica fuera de ellos
   @HostListener('document:click', ['$event'])
   clickOut(event: Event): void {
     const target = event.target as HTMLElement;
 
-    if (!target.closest('.input-group')) {
+    if (!target.closest('.card') && !target.closest('.input-group')) {
       this.mostrarSugerencias = false;
+      this.mostrarSugerenciasOrigen = false;
     }
 
     if (!target.closest('.navbar')) {

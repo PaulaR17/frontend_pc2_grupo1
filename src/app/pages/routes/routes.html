@@ -86,10 +86,10 @@
                     {{ ruta.created_at | date:'dd/MM/yyyy HH:mm' }}
                   </td>
                   <td class="small">
-                    {{ coordsCortas(ruta.origin_lat, ruta.origin_lon) }}
+                    {{ etiquetaPunto(ruta.origin_label, ruta.origin_lat, ruta.origin_lon) }}
                   </td>
                   <td class="small">
-                    {{ coordsCortas(ruta.dest_lat, ruta.dest_lon) }}
+                    {{ etiquetaPunto(ruta.dest_label, ruta.dest_lat, ruta.dest_lon) }}
                   </td>
                   <td>
                     <span class="fw-semibold">{{ ruta.distance_km || '-' }}</span>
@@ -152,10 +152,10 @@
                     {{ fav.history?.created_at | date:'dd/MM/yyyy HH:mm' }}
                   </td>
                   <td class="small">
-                    {{ fav.history ? coordsCortas(fav.history.origin_lat, fav.history.origin_lon) : '-' }}
+                    {{ fav.history ? etiquetaPunto(fav.history.origin_label, fav.history.origin_lat, fav.history.origin_lon) : '-' }}
                   </td>
                   <td class="small">
-                    {{ fav.history ? coordsCortas(fav.history.dest_lat, fav.history.dest_lon) : '-' }}
+                    {{ fav.history ? etiquetaPunto(fav.history.dest_label, fav.history.dest_lat, fav.history.dest_lon) : '-' }}
                   </td>
                   <td>
                     <span class="fw-semibold">{{ fav.history?.distance_km || '-' }}</span>

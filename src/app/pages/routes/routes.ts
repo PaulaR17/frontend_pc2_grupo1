@@ -161,11 +161,23 @@ export class RoutesComponent implements OnInit {
     return this.idsEnFavoritos.has(historyId);
   }
 
-  //texto corto con las coordenadas (para que la tabla quepa)
+  //etiqueta del origen o destino: si hay nombre guardado lo usamos, si no
+  //caemos a las coordenadas redondeadas para que la tabla siga teniendo info
+  etiquetaPunto(label: string | null | undefined, lat: number, lon: number): string {
+    let res = '';
+    if (label && label.trim() !== '') {
+      res = label;
+    } else {
+      const latRedondeada = Math.round(lat * 1000) / 1000;
+      const lonRedondeada = Math.round(lon * 1000) / 1000;
+      res = `${latRedondeada}, ${lonRedondeada}`;
+    }
+    return res;
+  }
+
+  //compatibilidad: el HTML antiguo aun llama a coordsCortas; lo conservamos
   coordsCortas(lat: number, lon: number): string {
-    const latRedondeada = Math.round(lat * 1000) / 1000;
-    const lonRedondeada = Math.round(lon * 1000) / 1000;
-    return `${latRedondeada} ; ${lonRedondeada}`;
+    return this.etiquetaPunto(null, lat, lon);
   }
 
   cambiarPestana(nombre: 'historial' | 'favoritos'): void {

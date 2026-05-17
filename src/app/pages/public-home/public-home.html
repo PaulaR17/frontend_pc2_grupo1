@@ -22,6 +22,19 @@
               title="Mostrar / ocultar predicciones de incidencias">
         {{ mostrarPredicciones ? 'Ocultar predicciones' : 'Ver predicciones' }}
       </button>
+      <button class="btn btn-sm rounded-pill px-3"
+              [class.btn-primary]="mostrarPois"
+              [class.btn-outline-light]="!mostrarPois"
+              (click)="togglePois()"
+              title="Mostrar / ocultar puntos de interés cercanos">
+        {{ mostrarPois ? 'Ocultar puntos de interés' : 'Ver puntos de interés' }}
+      </button>
+      <button class="btn btn-outline-light btn-sm rounded-pill px-3"
+              *ngIf="mostrarPois"
+              (click)="refrescarPois()"
+              title="Buscar puntos de interés en la zona visible">
+        Buscar POIs aquí
+      </button>
       <button class="btn btn-outline-light btn-sm rounded-pill px-3"
               routerLink="/register">
         Registrarse
@@ -55,7 +68,7 @@
                      (input)="onSearchInput()"
                      (focus)="onSearchFocus()"
                      (keyup.enter)="onSearch()"
-                     placeholder="Busca una zona en Madrid...">
+                     placeholder="Destino...">
 
               <button class="btn btn-success"
                       type="button"
@@ -64,6 +77,33 @@
                 <img src="assets/Icons/go-icon.png" class="icon-sm" alt="Ir">
               </button>
             </div>
+
+            <!-- Origen (opcional). Si lo dejas vacio, se usa la Puerta del Sol -->
+            <div class="input-group mb-2">
+              <span class="input-group-text bg-white border-end-0">
+                <img src="assets/Icons/pin-icon.png" class="icon-sm" alt="">
+              </span>
+              <input type="text"
+                     class="form-control border-start-0"
+                     [(ngModel)]="origenQuery"
+                     (input)="onOrigenInput()"
+                     (focus)="onOrigenFocus()"
+                     placeholder="Origen (vacío = Puerta del Sol)">
+            </div>
+
+            <!-- Sugerencias del origen -->
+            <ul class="list-group mb-2" *ngIf="mostrarSugerenciasOrigen && origenSuggestions.length > 0">
+              <li class="list-group-item list-group-item-action d-flex gap-2"
+                  *ngFor="let s of origenSuggestions"
+                  (click)="selectOrigenSuggestion(s)"
+                  style="cursor: pointer;">
+                <img src="assets/Icons/pin-icon.png" class="icon-sm flex-shrink-0 mt-1" alt="">
+                <div class="text-truncate">
+                  <strong class="d-block text-truncate">{{ getSuggestionTitle(s) }}</strong>
+                  <small class="text-muted text-truncate d-block">{{ getSuggestionSubtitle(s) }}</small>
+                </div>
+              </li>
+            </ul>
 
             <!-- Aviso (success / error / warning) usando alerts de Bootstrap -->
             <div class="alert py-2 px-3 mt-2 mb-0 small"

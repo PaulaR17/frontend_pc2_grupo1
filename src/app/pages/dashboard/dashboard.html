@@ -40,18 +40,51 @@
             Acciones de administración
           </h6>
 
-          <div class="d-flex flex-wrap gap-2">
+          <div class="d-flex flex-wrap gap-2 mb-3">
             <a routerLink="/admin/incidents" class="btn btn-outline-dark">
               Gestionar incidencias
             </a>
             <a routerLink="/admin/users" class="btn btn-outline-dark">
               Gestionar usuarios
             </a>
-            <button class="btn btn-success"
-                    (click)="ejecutarPredicciones()"
-                    [disabled]="prediccionesEjecutando">
-              {{ prediccionesEjecutando ? 'Ejecutando...' : 'Ejecutar predicciones' }}
-            </button>
+          </div>
+
+          <!-- configuracion de la prediccion: modelo, target y dias -->
+          <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label small mb-1">Modelo</label>
+              <select class="form-select form-select-sm"
+                      [(ngModel)]="modeloSeleccionado"
+                      [disabled]="prediccionesEjecutando">
+                <option *ngFor="let m of modelosDisponibles" [value]="m.valor">
+                  {{ m.etiqueta }}
+                </option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small mb-1">Target</label>
+              <select class="form-select form-select-sm"
+                      [(ngModel)]="targetSeleccionado"
+                      [disabled]="prediccionesEjecutando">
+                <option *ngFor="let t of targetsDisponibles" [value]="t">
+                  {{ t }}
+                </option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small mb-1">Días</label>
+              <input type="number" class="form-control form-control-sm"
+                     [(ngModel)]="diasSeleccionados"
+                     min="1" max="30"
+                     [disabled]="prediccionesEjecutando" />
+            </div>
+            <div class="col-md-4">
+              <button class="btn btn-success w-100"
+                      (click)="ejecutarPredicciones()"
+                      [disabled]="prediccionesEjecutando">
+                {{ prediccionesEjecutando ? 'Ejecutando...' : 'Ejecutar predicciones' }}
+              </button>
+            </div>
           </div>
 
           <div class="alert alert-success mt-3 mb-0" *ngIf="prediccionesMensaje">

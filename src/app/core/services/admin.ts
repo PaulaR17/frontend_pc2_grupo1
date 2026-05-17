@@ -95,6 +95,15 @@ export class AdminService {
     );
   }
 
+  //cualquier usuario logueado puede reportar una incidencia (no requiere rol admin)
+  reportIncident(payload: IncidentPayload): Observable<IncidentSummary> {
+    return this.http.post<IncidentSummary>(
+      `${this.apiUrl}/incidents/report`,
+      payload,
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
   updateIncident(incidentId: number, payload: Partial<IncidentPayload>): Observable<IncidentSummary> {
     return this.http.put<IncidentSummary>(
       `${this.apiUrl}/admin/incidents/${incidentId}`,
@@ -111,11 +120,11 @@ export class AdminService {
     );
   }
 
-  //dispara el calculo de predicciones (PC1)
-  runPredictions(): Observable<any> {
+  //dispara el calculo de predicciones (PC1); el admin elige modelo, target y dias
+  runPredictions(modelo: string = 'random_forest.pkl', target: string = 'Accidentes', dias: number = 7): Observable<any> {
     return this.http.post(
       `${this.apiUrl}/admin/predictions/run`,
-      {},
+      { modelo, target, dias },
       { headers: this.getAuthHeaders() }
     );
   }

@@ -1,5 +1,6 @@
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { Chart, registerables } from 'chart.js';
 
@@ -13,7 +14,7 @@ Chart.register(...registerables);
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss']
 })
@@ -34,6 +35,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
   prediccionesEjecutando = false;
   prediccionesMensaje = '';
   prediccionesError = '';
+
+  //opciones de modelo y target que el admin puede combinar antes de pulsar el boton
+  modelosDisponibles = [
+    { valor: 'random_forest.pkl', etiqueta: 'Random Forest' },
+    { valor: 'decision_tree.pkl', etiqueta: 'Decision Tree' },
+    { valor: 'svm.pkl', etiqueta: 'SVM (LinearSVC)' },
+  ];
+  targetsDisponibles = ['Accidentes', 'Calidad Aire', 'Emergencias'];
+  modeloSeleccionado = 'random_forest.pkl';
+  targetSeleccionado = 'Accidentes';
+  diasSeleccionados = 7;
 
   //guardamos las refs para poder destruir antes de redibujar
   private chartUsuarios: Chart | null = null;
@@ -204,7 +216,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.prediccionesError = '';
     this.prediccionesEjecutando = true;
 
-    this.adminService.runPredictions().subscribe({
+    this.adminService.runPredictions(
+      this.modeloSeleccionado,
+      this.targetSeleccionado,
+      this.diasSeleccionados,
+    ).subscribe({
       next: (respuesta: any) => {
         const msg = respuesta?.message || 'Predicciones ejecutadas correctamente.';
         this.prediccionesMensaje = msg;

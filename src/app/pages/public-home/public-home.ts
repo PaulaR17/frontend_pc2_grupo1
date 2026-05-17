@@ -5,7 +5,12 @@ import { RouterModule } from '@angular/router';
 import { PublicDataService, LocationSuggestion } from '../../core/services/public-data';
 import { AdminService, IncidentSummary, IncidentType } from '../../core/services/admin';
 import { PredictionService, Prediction, PredictionLevel } from '../../core/services/prediction';
+import { PoiService, Poi } from '../../core/services/poi';
 import { getCentroid } from '../../core/services/madrid-districts';
+import { decodePolyline } from '../../core/utils/polyline';
+import { iconoPoi } from '../../core/utils/poi-icon';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import * as L from 'leaflet';
 
 //home publico de invitados con mapa, predicciones y buscador
@@ -20,6 +25,7 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
   private dataService = inject(PublicDataService);
   private adminService = inject(AdminService);
   private predictionService = inject(PredictionService);
+  private poiService = inject(PoiService);
 
   guestId: string | null = null;
 
@@ -37,6 +43,15 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
   locationSuggestions: LocationSuggestion[] = [];
   selectedLocation: LocationSuggestion | null = null;
 
+  //busqueda paralela para el origen de la ruta. si esta vacio se usa la
+  //Puerta del Sol como punto de partida por defecto
+  origenQuery = '';
+  mostrarSugerenciasOrigen = false;
+  loadingSuggestionsOrigen = false;
+  origenSuggestions: LocationSuggestion[] = [];
+  selectedOrigen: LocationSuggestion | null = null;
+  private origenSearchTimer: any = null;
+
   notificationMessage = '';
   notificationType: 'success' | 'error' | 'warning' | '' = '';
 
@@ -44,10 +59,21 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
   private zoneLayer: L.LayerGroup = L.layerGroup();
   private incidentsLayer: L.LayerGroup = L.layerGroup();
   private predictionsLayer: L.LayerGroup = L.layerGroup();
+  private poisLayer: L.LayerGroup = L.layerGroup();
+  //capa donde pintamos la polyline de la ruta calculada (se vacia en cada calculo)
+  private routeLayer: L.LayerGroup = L.layerGroup();
+  //circulos translucidos sobre los distritos peligrosos atravesados
+  private riskLayer: L.LayerGroup = L.layerGroup();
   private searchTimer: any = null;
 
   mostrarPredicciones = false;
   prediccionesCargadas: Prediction[] = [];
+
+  mostrarPois = false;
+  poisLoading = false;
+  //ultima ruta dibujada en puntos [lat, lng]; sirve para mostrar POIs a lo
+  //largo del recorrido en vez de solo en el centro del mapa
+  private puntosRutaActual: [number, number][] = [];
 
   ngOnInit(): void {
     this.startGuestSession();
@@ -113,8 +139,62 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
     this.zoneLayer.addTo(this.map);
     this.incidentsLayer.addTo(this.map);
-    //la capa de predicciones solo se mete al activar el toggle
+    this.routeLayer.addTo(this.map);
+    this.riskLayer.addTo(this.map);
+    //la capa de predicciones y la de POIs solo se meten al activar el toggle
     this.cargarIncidencias();
+  }
+
+  //dibuja la polyline de la ruta sobre el mapa; reemplaza la anterior si la habia
+  private dibujarRuta(geometry: string | null | undefined): void {
+    this.routeLayer.clearLayers();
+
+    if (geometry) {
+      const puntos = decodePolyline(geometry);
+      const hayPuntos = puntos.length > 0;
+      if (hayPuntos) {
+        const polyline = L.polyline(puntos, {
+          color: '#198754',
+          weight: 5,
+          opacity: 0.85,
+        });
+        polyline.addTo(this.routeLayer);
+        this.map.fitBounds(polyline.getBounds(), { padding: [30, 30] });
+        this.puntosRutaActual = puntos;
+        //si la capa de POIs esta activa, los recargamos sobre el trayecto
+        if (this.mostrarPois) {
+          this.cargarPois();
+        }
+      }
+    }
+  }
+
+  //pinta un circulo translucido sobre cada distrito de la lista de riesgos:
+  //rojo para ALTO, naranja para MEDIO, amarillo claro para BAJO. asi el usuario
+  //ve de un vistazo por que zonas conflictivas pasa su ruta.
+  private dibujarZonasRiesgo(zonas: Array<{ district: number; level: string; probability: number }>): void {
+    this.riskLayer.clearLayers();
+
+    for (const zona of zonas) {
+      //BAJO no merece marca visual, asi evitamos saturar el mapa
+      const pintar = zona.level === 'ALTO' || zona.level === 'MEDIO';
+      const centroide = getCentroid(zona.district);
+
+      if (pintar && centroide) {
+        const color = zona.level === 'ALTO' ? '#dc3545' : '#fd7e14';
+        const popup = `<b>${centroide.name}</b><br>Riesgo: <strong>${zona.level}</strong><br>Probabilidad: ${(zona.probability * 100).toFixed(0)}%`;
+
+        L.circle([centroide.lat, centroide.lon], {
+          radius: 1500,
+          color,
+          weight: 1,
+          fillColor: color,
+          fillOpacity: 0.18,
+        })
+          .bindPopup(popup)
+          .addTo(this.riskLayer);
+      }
+    }
   }
 
   //activa o desactiva la capa de predicciones
@@ -126,6 +206,103 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
       this.cargarPredicciones();
     } else {
       this.map.removeLayer(this.predictionsLayer);
+    }
+  }
+
+  //activa o desactiva la capa de POIs
+  togglePois(): void {
+    this.mostrarPois = !this.mostrarPois;
+
+    if (this.mostrarPois) {
+      this.poisLayer.addTo(this.map);
+      this.cargarPois();
+    } else {
+      this.map.removeLayer(this.poisLayer);
+    }
+  }
+
+  //refresca los POIs en la zona que se ve ahora en el mapa
+  refrescarPois(): void {
+    if (this.mostrarPois) {
+      this.cargarPois();
+    }
+  }
+
+  //decide donde pedir POIs: si hay una ruta dibujada, en 3 puntos del
+  //trayecto (inicio, medio, final) para que el usuario vea sitios donde
+  //parar a lo largo del camino. si no, alrededor del centro del mapa.
+  private cargarPois(): void {
+    this.poisLoading = true;
+
+    const centros = this.puntosBusquedaPois();
+    //ORS limita a 2000m por consulta; usamos el maximo para cubrir mas zona
+    const llamadas = centros.map((c) =>
+      this.poiService.search(c[0], c[1], 2000).pipe(catchError(() => of([] as Poi[])))
+    );
+
+    forkJoin(llamadas).subscribe({
+      next: (resultados) => {
+        this.poisLoading = false;
+        const todos: Poi[] = ([] as Poi[]).concat(...resultados);
+        this.dibujarPois(this.dedupePois(todos));
+      },
+      error: () => {
+        this.poisLoading = false;
+        console.warn('No se pudieron cargar los POIs.');
+      }
+    });
+  }
+
+  //devuelve los puntos [lat, lng] donde pediremos POIs.
+  //si hay ruta usa inicio/mitad/final; si no, el centro del mapa.
+  private puntosBusquedaPois(): [number, number][] {
+    const puntos: [number, number][] = [];
+    const ruta = this.puntosRutaActual;
+    const hayRuta = ruta.length >= 2;
+
+    if (hayRuta) {
+      puntos.push(ruta[0]);
+      puntos.push(ruta[Math.floor(ruta.length / 2)]);
+      puntos.push(ruta[ruta.length - 1]);
+    } else {
+      const centro = this.map.getCenter();
+      puntos.push([centro.lat, centro.lng]);
+    }
+
+    return puntos;
+  }
+
+  //quita POIs duplicados (mismo lat/lng) y agrupa los que esten muy
+  //cerca (<80m) para que el mapa no salga lleno de marcadores pegados.
+  //usamos un cuadricula muy gruesa (5 decimales = ~1.1m, asi que con
+  //3 decimales = ~110m) como clave de bucket.
+  private dedupePois(lista: Poi[]): Poi[] {
+    const vistos = new Set<string>();
+    const unicos: Poi[] = [];
+
+    for (const poi of lista) {
+      //3 decimales agrupa POIs en una rejilla de unos ~80m
+      const clave = `${poi.lat.toFixed(3)},${poi.lng.toFixed(3)}`;
+      const nuevo = !vistos.has(clave);
+      if (nuevo) {
+        vistos.add(clave);
+        unicos.push(poi);
+      }
+    }
+
+    return unicos;
+  }
+
+  //pinta cada POI con un icono distinto segun su grupo (gastronomia, ocio, turismo)
+  private dibujarPois(pois: Poi[]): void {
+    this.poisLayer.clearLayers();
+
+    for (const poi of pois) {
+      const popup = `<b>${poi.name}</b><br><small>${poi.category}</small>`;
+
+      L.marker([poi.lat, poi.lng], { icon: iconoPoi(poi.group) })
+        .bindPopup(popup)
+        .addTo(this.poisLayer);
     }
   }
 
@@ -341,6 +518,52 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
     });
   }
 
+  //input del origen: mismo flujo que el destino pero sobre su propio estado
+  onOrigenInput(): void {
+    this.selectedOrigen = null;
+
+    const query = this.origenQuery.trim();
+
+    if (this.origenSearchTimer) {
+      clearTimeout(this.origenSearchTimer);
+    }
+
+    this.origenSearchTimer = setTimeout(() => {
+      this.loadOrigenSuggestions(query);
+    }, 250);
+  }
+
+  onOrigenFocus(): void {
+    this.mostrarSugerenciasOrigen = true;
+
+    if (this.origenSuggestions.length === 0) {
+      this.loadOrigenSuggestions(this.origenQuery.trim());
+    }
+  }
+
+  private loadOrigenSuggestions(query: string): void {
+    this.loadingSuggestionsOrigen = true;
+    this.mostrarSugerenciasOrigen = true;
+
+    this.dataService.searchLocation(query).subscribe({
+      next: (res: any) => {
+        this.origenSuggestions = res.results ?? [];
+        this.loadingSuggestionsOrigen = false;
+      },
+      error: () => {
+        this.origenSuggestions = [];
+        this.loadingSuggestionsOrigen = false;
+      }
+    });
+  }
+
+  selectOrigenSuggestion(suggestion: LocationSuggestion): void {
+    this.selectedOrigen = suggestion;
+    this.origenQuery = suggestion.text;
+    this.origenSuggestions = [];
+    this.mostrarSugerenciasOrigen = false;
+  }
+
   selectSuggestion(suggestion: LocationSuggestion): void {
     this.selectedLocation = suggestion;
     this.searchQuery = suggestion.text;
@@ -362,7 +585,7 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
   private lanzarCalculoRuta(destination: LocationSuggestion): void {
     this.loadingRoute = true;
 
-    this.dataService.calculateGuestRoute(this.guestId!, destination).subscribe({
+    this.dataService.calculateGuestRoute(this.guestId!, destination, this.selectedOrigen).subscribe({
       next: (routeRes: any) => {
         this.loadingRoute = false;
         this.searchCount = routeRes.search_count ?? this.searchCount + 1;
@@ -370,7 +593,21 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
         this.maxSearches = routeRes.max ?? this.maxSearches;
 
         this.displayLocationOnMap(destination, routeRes.summary);
-        this.showNotification('Ruta calculada correctamente.', 'success');
+        this.dibujarRuta(routeRes.geometry);
+        this.dibujarZonasRiesgo(routeRes.risk_zones ?? []);
+
+        //si la ruta atraviesa distritos con prediccion ALTO/MEDIO avisamos al usuario
+        const peligros = (routeRes.risk_zones ?? []) as Array<{district: number, level: string, probability: number}>;
+        const altos = peligros.filter((z) => z.level === 'ALTO');
+        const medios = peligros.filter((z) => z.level === 'MEDIO');
+        let aviso = 'Ruta calculada correctamente.';
+        if (altos.length > 0) {
+          aviso = `Ruta calculada. Atención: ${altos.length} zona(s) con riesgo ALTO en el camino.`;
+        } else if (medios.length > 0) {
+          aviso = `Ruta calculada. ${medios.length} zona(s) con riesgo MEDIO en el camino.`;
+        }
+        const tipoAviso = altos.length > 0 ? 'warning' : 'success';
+        this.showNotification(aviso, tipoAviso);
       },
       error: (err: any) => {
         this.loadingRoute = false;
