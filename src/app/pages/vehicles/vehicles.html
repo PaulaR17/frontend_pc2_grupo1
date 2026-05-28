@@ -5,14 +5,10 @@
     - Contenido: tarjetas de vehículos en grid responsive
     - Modal Bootstrap para crear / editar vehículo
 -->
-<div class="d-flex flex-column vh-100">
+<div class="d-flex flex-column min-vh-100">
 
-  <!-- ===================== NAVBAR ===================== -->
-  <nav class="navbar navbar-dark bg-eco-dark px-3 position-relative">
-    <a routerLink="/user-home" class="navbar-brand logo-eco text-white fs-5 mb-0 text-decoration-none">
-      ECO<span>TRAFFIC</span>
-    </a>
-
+  <!-- ===================== HEADER ===================== -->
+  <app-header brandRoute="/user-home">
     <div class="position-relative">
       <button class="btn btn-sm rounded-pill d-flex align-items-center gap-2 text-white border-0"
               style="background: rgba(255,255,255,0.1);"
@@ -35,10 +31,10 @@
         </button>
       </ul>
     </div>
-  </nav>
+  </app-header>
 
   <!-- ===================== CONTENIDO ===================== -->
-  <main class="flex-grow-1 overflow-auto bg-light p-3 p-md-4" (click)="closeAllMenus()">
+  <main class="flex-grow-1 bg-light p-3 p-md-4" (click)="closeAllMenus()">
     <div class="container-fluid">
 
       <!-- Notificaciones -->
@@ -168,6 +164,8 @@
 
     </div>
   </main>
+
+  <app-footer></app-footer>
 </div>
 
 <!-- ===================== MODAL ===================== -->

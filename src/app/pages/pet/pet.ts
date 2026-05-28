@@ -12,12 +12,14 @@ import {
   EquipmentRow,
   ItemType
 } from '../../core/services/item';
+import { HeaderComponent } from '../../core/components/header/header';
+import { FooterComponent } from '../../core/components/footer/footer';
 
 //pagina de la mascota del usuario
 @Component({
   selector: 'app-pet',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, HeaderComponent, FooterComponent],
   templateUrl: './pet.html',
   styleUrls: ['./pet.scss']
 })

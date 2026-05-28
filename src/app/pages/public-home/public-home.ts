@@ -3,21 +3,27 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { PublicDataService, LocationSuggestion } from '../../core/services/public-data';
+import { RouteStep } from '../../core/services/route';
 import { AdminService, IncidentSummary, IncidentType } from '../../core/services/admin';
 import { PredictionService, Prediction, PredictionLevel } from '../../core/services/prediction';
 import { PoiService, Poi } from '../../core/services/poi';
 import { getCentroid } from '../../core/services/madrid-districts';
 import { decodePolyline } from '../../core/utils/polyline';
 import { iconoPoi } from '../../core/utils/poi-icon';
+import { iconoOrigen, iconoDestino } from '../../core/utils/route-markers';
+import { formatearFecha } from '../../core/utils/date-format';
+import { muestrearRuta } from '../../core/utils/route-sampling';
+import { formatearDuracion, formatearMetros } from '../../core/utils/route-format';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import * as L from 'leaflet';
+import { HeaderComponent } from '../../core/components/header/header';
 
 //home publico de invitados con mapa, predicciones y buscador
 @Component({
   selector: 'app-public-home',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, HeaderComponent],
   templateUrl: './public-home.html',
   styleUrls: ['./public-home.scss']
 })
@@ -68,6 +74,11 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
 
   mostrarPredicciones = false;
   prediccionesCargadas: Prediction[] = [];
+
+  //resumen de la ultima ruta calculada (km/duracion) + pasos textuales.
+  //null mientras no haya ruta calculada
+  resumenRuta: { distance_km: number; duration_min: number } | null = null;
+  pasosRuta: RouteStep[] = [];
 
   mostrarPois = false;
   poisLoading = false;
@@ -228,16 +239,22 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
     }
   }
 
-  //decide donde pedir POIs: si hay una ruta dibujada, en 3 puntos del
-  //trayecto (inicio, medio, final) para que el usuario vea sitios donde
-  //parar a lo largo del camino. si no, alrededor del centro del mapa.
+  //pide POIs repartidos a lo largo de la ruta (muestras cada ~700 m) en vez
+  //de concentrarlos solo en inicio/medio/final. cuando no hay ruta, pide
+  //alrededor del centro del mapa con un radio mas grande.
   private cargarPois(): void {
     this.poisLoading = true;
 
+    const hayRuta = this.puntosRutaActual.length >= 2;
     const centros = this.puntosBusquedaPois();
-    //ORS limita a 2000m por consulta; usamos el maximo para cubrir mas zona
+    //radios y limite por consulta: en la ruta usamos circulos pequeños para
+    //que cada muestra cubra solo su tramo y se vean POIs durante todo el
+    //recorrido; sin ruta usamos un radio grande sobre el centro del mapa
+    const radio = hayRuta ? 600 : 1500;
+    const limitePorPunto = hayRuta ? 10 : 25;
+
     const llamadas = centros.map((c) =>
-      this.poiService.search(c[0], c[1], 2000).pipe(catchError(() => of([] as Poi[])))
+      this.poiService.search(c[0], c[1], radio, limitePorPunto).pipe(catchError(() => of([] as Poi[])))
     );
 
     forkJoin(llamadas).subscribe({
@@ -253,20 +270,17 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
     });
   }
 
-  //devuelve los puntos [lat, lng] donde pediremos POIs.
-  //si hay ruta usa inicio/mitad/final; si no, el centro del mapa.
+  //devuelve los centros [lat, lng] donde pediremos POIs. si hay ruta saca
+  //una muestra cada ~700 m con un tope de 8 puntos; si no, el centro del mapa
   private puntosBusquedaPois(): [number, number][] {
-    const puntos: [number, number][] = [];
     const ruta = this.puntosRutaActual;
-    const hayRuta = ruta.length >= 2;
+    let puntos: [number, number][];
 
-    if (hayRuta) {
-      puntos.push(ruta[0]);
-      puntos.push(ruta[Math.floor(ruta.length / 2)]);
-      puntos.push(ruta[ruta.length - 1]);
+    if (ruta.length >= 2) {
+      puntos = muestrearRuta(ruta, 700, 8);
     } else {
       const centro = this.map.getCenter();
-      puntos.push([centro.lat, centro.lng]);
+      puntos = [[centro.lat, centro.lng]];
     }
 
     return puntos;
@@ -359,10 +373,11 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
 
   private popupPrediccion(pred: Prediction, nombreDistrito: string): string {
     const probabilidad = Math.round(pred.probability * 100);
+    const fecha = formatearFecha(pred.for_date);
 
     return `
       <b>${nombreDistrito}</b><br>
-      <small>Predicción para ${pred.for_date}</small><br>
+      <small>Predicción para ${fecha}</small><br>
       Nivel: <b>${pred.level}</b> (${probabilidad}%)<br>
       <small>Objetivo: ${pred.target_type}</small>
     `;
@@ -593,8 +608,18 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
         this.maxSearches = routeRes.max ?? this.maxSearches;
 
         this.displayLocationOnMap(destination, routeRes.summary);
+        //pintamos tambien un marcador A en el origen (si no se eligio uno,
+        //por defecto el backend arranca en la Puerta del Sol)
+        const origenLat = this.selectedOrigen?.lat ?? 40.4167;
+        const origenLon = this.selectedOrigen?.lon ?? -3.7033;
+        const origenLabel = this.selectedOrigen?.text ?? 'Puerta del Sol';
+        this.dibujarMarcadorOrigen(origenLat, origenLon, origenLabel);
         this.dibujarRuta(routeRes.geometry);
         this.dibujarZonasRiesgo(routeRes.risk_zones ?? []);
+
+        //guardamos resumen + indicaciones para el panel de info de la ruta
+        this.resumenRuta = routeRes.summary ?? null;
+        this.pasosRuta = routeRes.steps ?? [];
 
         //si la ruta atraviesa distritos con prediccion ALTO/MEDIO avisamos al usuario
         const peligros = (routeRes.risk_zones ?? []) as Array<{district: number, level: string, probability: number}>;
@@ -628,7 +653,7 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
     this.zoneLayer.clearLayers();
     this.map.flyTo([location.lat, location.lon], 14);
 
-    L.marker([location.lat, location.lon])
+    L.marker([location.lat, location.lon], { icon: iconoDestino() })
       .addTo(this.zoneLayer)
       .bindPopup(`<b>${location.text}</b><br>Pulsa el botón verde para calcular la ruta.`)
       .openPopup();
@@ -646,10 +671,35 @@ export class PublicHomeComponent implements OnInit, AfterViewInit {
 
     this.map.flyTo([location.lat, location.lon], 15);
 
-    L.marker([location.lat, location.lon])
+    //marcador del destino (B, rojo)
+    L.marker([location.lat, location.lon], { icon: iconoDestino() })
       .addTo(this.zoneLayer)
       .bindPopup(popupLines.join('<br>'))
       .openPopup();
+  }
+
+  //pinta el marcador A en el punto de salida de la ruta
+  private dibujarMarcadorOrigen(lat: number, lon: number, label: string): void {
+    L.marker([lat, lon], { icon: iconoOrigen() })
+      .addTo(this.zoneLayer)
+      .bindPopup(`<b>Origen</b><br>${label}`);
+  }
+
+  //formato legible del tiempo total y de la distancia de cada paso. los
+  //llamamos desde el template, no son funciones puras de utilidad solo
+  //porque Angular necesita que el metodo este en el componente
+  duracionLegible(min: number | null | undefined): string {
+    return formatearDuracion(min);
+  }
+
+  metrosLegibles(m: number | null | undefined): string {
+    return formatearMetros(m);
+  }
+
+  //cierra el panel flotante de resumen + indicaciones de la ruta
+  cerrarPanelRuta(): void {
+    this.resumenRuta = null;
+    this.pasosRuta = [];
   }
 
   getSuggestionTitle(suggestion: LocationSuggestion): string {

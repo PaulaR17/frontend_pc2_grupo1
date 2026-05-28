@@ -31,9 +31,11 @@ export class PublicDataService {
     return this.http.get(`${this.apiUrl}/guest/sessions/${sessionId}/quota`);
   }
 
+  //pedimos hasta 8 resultados para que se vean varias calles ademas
+  //de los distritos populares que devuelve el backend
   searchLocation(query: string): Observable<any> {
     return this.http.get(
-      `${this.apiUrl}/locations/search?q=${encodeURIComponent(query)}&limit=5`
+      `${this.apiUrl}/locations/search?q=${encodeURIComponent(query)}&limit=8`
     );
   }
 
@@ -47,7 +49,7 @@ export class PublicDataService {
     const origenLat = origin?.lat ?? 40.4167;
     const origenLon = origin?.lon ?? -3.7033;
 
-    return this.http.post(`${this.apiUrl}/guest/sessions/${sessionId}/routes?include=summary,geometry`, {
+    return this.http.post(`${this.apiUrl}/guest/sessions/${sessionId}/routes?include=summary,geometry,steps`, {
       origin: { lat: origenLat, lon: origenLon },
       destination: { lat: destination.lat, lon: destination.lon },
       profile: 'driving-car',

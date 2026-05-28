@@ -5,12 +5,14 @@ import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth';
 import { BackendVehicle, VehicleService } from '../../core/services/vehicle';
 import { ItemService, UserBadge } from '../../core/services/item';
+import { HeaderComponent } from '../../core/components/header/header';
+import { FooterComponent } from '../../core/components/footer/footer';
 
 //perfil del usuario con sus datos, vehiculos y chapitas
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, HeaderComponent, FooterComponent],
   templateUrl: './profile.html',
   styleUrls: ['./profile.scss']
 })

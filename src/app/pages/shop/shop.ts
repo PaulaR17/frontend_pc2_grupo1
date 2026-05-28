@@ -11,6 +11,8 @@ import {
   ItemType,
   WalletInfo
 } from '../../core/services/item';
+import { HeaderComponent } from '../../core/components/header/header';
+import { FooterComponent } from '../../core/components/footer/footer';
 
 //pagina "tienda" con tres pestañas:
 //  catalogo   -> todos los items activos
@@ -19,7 +21,7 @@ import {
 @Component({
   selector: 'app-shop',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HeaderComponent, FooterComponent],
   templateUrl: './shop.html',
   styleUrls: ['./shop.scss']
 })

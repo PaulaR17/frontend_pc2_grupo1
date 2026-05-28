@@ -9,12 +9,14 @@ import {
   IncidentPayload,
   IncidentType
 } from '../../core/services/admin';
+import { HeaderComponent } from '../../core/components/header/header';
+import { FooterComponent } from '../../core/components/footer/footer';
 
 //CRUD de incidencias del mapa
 @Component({
   selector: 'app-admin-incidents',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, HeaderComponent, FooterComponent],
   templateUrl: './admin-incidents.html',
   styleUrls: ['./admin-incidents.scss']
 })

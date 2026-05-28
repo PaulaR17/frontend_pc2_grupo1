@@ -2,12 +2,14 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { HeaderComponent } from '../../core/components/header/header';
+import { FooterComponent } from '../../core/components/footer/footer';
 
 //recuperacion de contraseña, todavia sin endpoint en el backend
 @Component({
   selector: 'app-recovery',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, HeaderComponent, FooterComponent],
   templateUrl: './recovery.html',
   styleUrls: ['./recovery.scss']
 })

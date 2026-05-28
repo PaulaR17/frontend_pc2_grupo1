@@ -44,8 +44,21 @@ export interface RoutePoint {
 //zona de riesgo atravesada por la ruta
 export interface RiskZone {
   district: number;
+  name?: string;
   level: string;
   probability: number;
+  for_date?: string;
+}
+
+//un paso de las indicaciones que devuelve ORS: instruccion textual + distancia
+//en metros + duracion en segundos del tramo. el campo "name" suele traer la
+//calle por la que se viaja durante ese paso.
+export interface RouteStep {
+  distance: number;
+  duration: number;
+  instruction: string;
+  name?: string;
+  type?: number;
 }
 
 //respuesta del endpoint de calculo de ruta (preview o calculate)
@@ -53,6 +66,7 @@ export interface RouteResponse {
   summary?: { distance_km: number; duration_min: number };
   geometry?: string | null;
   risk_zones?: RiskZone[];
+  steps?: RouteStep[];
   history_id?: number;
   reward?: {
     coins: number;
@@ -70,11 +84,22 @@ export class RouteService {
   private http = inject(HttpClient);
   private apiUrl = environment.apiUrl;
 
-  //calcula una ruta sin guardarla; endpoint publico
-  preview(origin: RoutePoint, destination: RoutePoint, profile: string = 'driving-car'): Observable<RouteResponse> {
+  //calcula una ruta sin guardarla; endpoint publico.
+  //"avoidDistricts" permite pedir a ORS que evite los distritos peligrosos
+  //al recalcular la ruta sin pasar por ellos.
+  preview(
+    origin: RoutePoint,
+    destination: RoutePoint,
+    profile: string = 'driving-car',
+    avoidDistricts: number[] = []
+  ): Observable<RouteResponse> {
+    const body: any = { origin, destination, profile };
+    if (avoidDistricts.length > 0) {
+      body.avoid_districts = avoidDistricts;
+    }
     return this.http.post<RouteResponse>(
-      `${this.apiUrl}/routes/preview?include=summary,geometry`,
-      { origin, destination, profile }
+      `${this.apiUrl}/routes/preview?include=summary,geometry,steps`,
+      body
     );
   }
 

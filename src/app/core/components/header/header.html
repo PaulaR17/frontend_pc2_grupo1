@@ -1,0 +1,16 @@
+<!--
+  Header reutilizable de EcoTraffic
+  - Logo a la izquierda (link configurable)
+  - Botones a la derecha proyectados por cada pagina via <ng-content>
+-->
+<nav class="navbar navbar-dark bg-eco-dark px-3 position-relative">
+  <a [routerLink]="brandRoute"
+     class="navbar-brand logo-eco text-white fs-5 mb-0 text-decoration-none">
+    ECO<span>TRAFFIC</span>
+    <small class="ms-2 badge bg-warning text-dark" *ngIf="badge">{{ badge }}</small>
+  </a>
+
+  <div class="d-flex gap-2 align-items-center flex-wrap justify-content-end">
+    <ng-content></ng-content>
+  </div>
+</nav>

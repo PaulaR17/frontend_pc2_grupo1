@@ -1,12 +1,8 @@
 <!-- Profile - EcoTraffic -->
-<div class="d-flex flex-column vh-100">
+<div class="d-flex flex-column min-vh-100">
 
-  <!-- Navbar -->
-  <nav class="navbar navbar-dark bg-eco-dark px-3 position-relative">
-    <a routerLink="/user-home" class="navbar-brand logo-eco text-white fs-5 mb-0 text-decoration-none">
-      ECO<span>TRAFFIC</span>
-    </a>
-
+  <!-- Header -->
+  <app-header brandRoute="/user-home">
     <div class="position-relative">
       <button class="btn btn-sm rounded-pill d-flex align-items-center gap-2 text-white border-0"
               style="background: rgba(255,255,255,0.1);"
@@ -26,10 +22,10 @@
                 (click)="logout()">Cerrar sesión</button>
       </ul>
     </div>
-  </nav>
+  </app-header>
 
   <!-- Contenido -->
-  <div class="container-fluid flex-grow-1 overflow-auto bg-light p-3 p-md-4">
+  <div class="container-fluid flex-grow-1 bg-light p-3 p-md-4">
     <div class="row g-4">
 
       <!-- Aside -->
@@ -242,4 +238,6 @@
       </main>
     </div>
   </div>
+
+  <app-footer></app-footer>
 </div>

@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth';
 import { BackendVehicle, FuelType, VehiclePayload, VehicleService } from '../../core/services/vehicle';
+import { HeaderComponent } from '../../core/components/header/header';
+import { FooterComponent } from '../../core/components/footer/footer';
 
 export interface Vehicle {
   id: number;
@@ -33,7 +35,7 @@ interface VehicleForm {
 @Component({
   selector: 'app-vehicles',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, HeaderComponent, FooterComponent],
   templateUrl: './vehicles.html',
   styleUrls: ['./vehicles.scss']
 })

@@ -2,21 +2,17 @@
   Admin / Ficha detalle de usuario - EcoTraffic
   Muestra datos del usuario + ubicaciones guardadas + vehiculos.
 -->
-<div class="d-flex flex-column vh-100">
+<div class="d-flex flex-column min-vh-100">
 
-  <!-- Navbar -->
-  <nav class="navbar navbar-dark bg-eco-dark px-3">
-    <span class="navbar-brand logo-eco text-white fs-5 mb-0">
-      ECO<span>TRAFFIC</span>
-      <small class="ms-2 badge bg-warning text-dark">ADMIN</small>
-    </span>
+  <!-- Header -->
+  <app-header brandRoute="/admin/users" badge="ADMIN">
     <button class="btn btn-sm btn-outline-light" (click)="volver()">
       Volver al listado
     </button>
-  </nav>
+  </app-header>
 
   <!-- Contenido -->
-  <main class="flex-grow-1 overflow-auto bg-light p-3 p-md-4">
+  <main class="flex-grow-1 bg-light p-3 p-md-4">
     <div class="container" style="max-width: 960px;">
 
       <!-- Estado de carga -->
@@ -174,4 +170,5 @@
     </div>
   </main>
 
+  <app-footer></app-footer>
 </div>

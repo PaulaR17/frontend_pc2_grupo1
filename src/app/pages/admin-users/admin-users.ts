@@ -9,12 +9,14 @@ import {
   AdminUserPayload,
   UserRole
 } from '../../core/services/admin';
+import { HeaderComponent } from '../../core/components/header/header';
+import { FooterComponent } from '../../core/components/footer/footer';
 
 //gestion de usuarios del panel admin
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, HeaderComponent, FooterComponent],
   templateUrl: './admin-users.html',
   styleUrls: ['./admin-users.scss']
 })

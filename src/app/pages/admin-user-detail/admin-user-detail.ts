@@ -4,13 +4,15 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { AdminService, AdminUserDetail, UserRole } from '../../core/services/admin';
 import { BackendVehicle, FuelType } from '../../core/services/vehicle';
+import { HeaderComponent } from '../../core/components/header/header';
+import { FooterComponent } from '../../core/components/footer/footer';
 
 //ficha completa de un usuario en el panel admin:
 //muestra datos basicos + ubicaciones (casa/trabajo) + lista de vehiculos
 @Component({
   selector: 'app-admin-user-detail',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HeaderComponent, FooterComponent],
   templateUrl: './admin-user-detail.html',
   styleUrls: ['./admin-user-detail.scss']
 })

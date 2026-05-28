@@ -6,6 +6,8 @@ import { Chart, registerables } from 'chart.js';
 
 import { AuthService } from '../../core/services/auth';
 import { AdminService, DashboardData, IncidentSummary } from '../../core/services/admin';
+import { HeaderComponent } from '../../core/components/header/header';
+import { FooterComponent } from '../../core/components/footer/footer';
 
 //registro de modulos de Chart.js, solo una vez
 Chart.register(...registerables);
@@ -14,7 +16,7 @@ Chart.register(...registerables);
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, HeaderComponent, FooterComponent],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss']
 })
@@ -82,12 +84,29 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.incidents = lista || [];
         this.contarIncidenciasPorTipo(this.incidents);
         this.loading = false;
-        //esperamos un tick a que Angular monte los canvas
-        setTimeout(() => this.dibujarGraficos(), 0);
+        //los canvas estan dentro de un *ngIf que depende de "loading":
+        //esperamos a que Angular los monte antes de dibujar las graficas
+        this.programarDibujoGraficos();
       },
       error: () => {
         this.loading = false;
         this.errorMessage = 'Se cargaron las métricas pero falló la lista de incidencias.';
+      }
+    });
+  }
+
+  //intenta dibujar las graficas cuando los canvas ya esten en el DOM.
+  //antes usabamos setTimeout(0) pero a veces Angular todavia no habia
+  //pintado el bloque del *ngIf y el getElementById devolvia null. ahora
+  //esperamos al siguiente frame y, si aun no estan, reintentamos hasta
+  //10 veces con un margen de 50 ms.
+  private programarDibujoGraficos(intentos: number = 0): void {
+    requestAnimationFrame(() => {
+      const listo = document.getElementById('grafico-usuarios');
+      if (listo) {
+        this.dibujarGraficos();
+      } else if (intentos < 10) {
+        setTimeout(() => this.programarDibujoGraficos(intentos + 1), 50);
       }
     });
   }

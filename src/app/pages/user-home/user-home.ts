@@ -1,19 +1,24 @@
 import { Component, OnInit, inject, AfterViewInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth';
 import { PublicDataService, LocationSuggestion } from '../../core/services/public-data';
 import { AdminService, IncidentSummary, IncidentType } from '../../core/services/admin';
 import { PredictionService, Prediction, PredictionLevel } from '../../core/services/prediction';
 import { PoiService, Poi } from '../../core/services/poi';
-import { RouteService, RouteResponse, UserProfile } from '../../core/services/route';
+import { RouteService, RouteResponse, RiskZone, UserProfile, RouteStep } from '../../core/services/route';
 import { getCentroid } from '../../core/services/madrid-districts';
 import { decodePolyline } from '../../core/utils/polyline';
 import { iconoPoi } from '../../core/utils/poi-icon';
+import { iconoOrigen, iconoDestino } from '../../core/utils/route-markers';
+import { formatearFecha } from '../../core/utils/date-format';
+import { muestrearRuta } from '../../core/utils/route-sampling';
+import { formatearDuracion, formatearMetros } from '../../core/utils/route-format';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import * as L from 'leaflet';
+import { HeaderComponent } from '../../core/components/header/header';
 
 interface SavedRoute {
   name: string;
@@ -28,7 +33,7 @@ interface SavedRoute {
 @Component({
   selector: 'app-user-home',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, HeaderComponent],
   templateUrl: './user-home.html',
   styleUrls: ['./user-home.scss']
 })
@@ -40,6 +45,7 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
   private poiService = inject(PoiService);
   private routeService = inject(RouteService);
   private router = inject(Router);
+  private activatedRoute = inject(ActivatedRoute);
 
   user: any = null;
   userInitials = '';
@@ -77,6 +83,9 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
 
   activeTab: 'inicio' | 'rutas' | 'ayuda' | 'vehiculos' | 'mascota' = 'inicio';
 
+  //que pregunta del FAQ esta abierta (1..5). 0 = ninguna
+  ayudaAbierta: number = 0;
+
   savedRoutes: SavedRoute[] = [];
 
   //perfil con ubicaciones guardadas (casa/trabajo)
@@ -93,6 +102,15 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
   } | null = null;
   guardandoFavorito = false;
 
+  //zonas de riesgo atravesadas por la ultima ruta calculada. se muestra
+  //en un panel persistente al lado del mapa con el nombre del distrito.
+  zonasRiesgoActuales: RiskZone[] = [];
+  recalculandoRuta = false;
+
+  //resumen + indicaciones paso a paso de la ruta actual
+  resumenRuta: { distance_km: number; duration_min: number } | null = null;
+  pasosRuta: RouteStep[] = [];
+
   private map!: L.Map;
   private zoneLayer: L.LayerGroup = L.layerGroup();
   private incidentsLayer: L.LayerGroup = L.layerGroup();
@@ -105,6 +123,12 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
   mostrarPredicciones = false;
   prediccionesCargadas: Prediction[] = [];
 
+  //fechas distintas de prediccion (ordenadas) y el indice seleccionado
+  //en el slider; sirve para que el usuario pueda ver predicciones de
+  //los proximos dias
+  fechasPrediccion: string[] = [];
+  fechaPrediccionIdx: number = 0;
+
   mostrarPois = false;
   poisLoading = false;
   private puntosRutaActual: [number, number][] = [];
@@ -116,6 +140,45 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
 
   ngAfterViewInit(): void {
     this.initMap();
+    //si venimos desde el historial con queryParams, recalculamos la ruta
+    this.recalcularDesdeQueryParams();
+  }
+
+  //si la URL trae origin_lat/lon/label y dest_lat/lon/label, rellena
+  //los campos del buscador y dispara el calculo automatico. Lo usa el
+  //boton "Volver a calcular" de la pagina /routes
+  private recalcularDesdeQueryParams(): void {
+    const params = this.activatedRoute.snapshot.queryParamMap;
+    const oLat = params.get('origin_lat');
+    const oLon = params.get('origin_lon');
+    const dLat = params.get('dest_lat');
+    const dLon = params.get('dest_lon');
+
+    const hayCoords = oLat && oLon && dLat && dLon;
+
+    if (hayCoords) {
+      const origenLabel = params.get('origin_label') ?? 'Origen';
+      const destinoLabel = params.get('dest_label') ?? 'Destino';
+
+      this.selectedOrigen = {
+        lat: Number(oLat),
+        lon: Number(oLon),
+        text: origenLabel,
+        name: origenLabel
+      } as LocationSuggestion;
+      this.origenQuery = origenLabel;
+
+      const destino: LocationSuggestion = {
+        lat: Number(dLat),
+        lon: Number(dLon),
+        text: destinoLabel,
+        name: destinoLabel
+      } as LocationSuggestion;
+      this.selectedLocation = destino;
+      this.searchQuery = destinoLabel;
+
+      this.calculateRouteTo(destino);
+    }
   }
 
   //carga el usuario actual; si no hay id en localStorage hace logout
@@ -265,14 +328,18 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
     }
   }
 
-  //decide donde pedir POIs: si hay ruta, en 3 puntos (inicio/medio/fin);
-  //si no, alrededor del centro del mapa
+  //POIs repartidos a lo largo de la ruta (muestras cada ~700 m, radio
+  //pequeño) en vez de 3 grandes circulos al inicio/medio/final
   private cargarPois(): void {
     this.poisLoading = true;
 
+    const hayRuta = this.puntosRutaActual.length >= 2;
     const centros = this.puntosBusquedaPois();
+    const radio = hayRuta ? 600 : 1500;
+    const limitePorPunto = hayRuta ? 10 : 25;
+
     const llamadas = centros.map((c) =>
-      this.poiService.search(c[0], c[1], 2000).pipe(catchError(() => of([] as Poi[])))
+      this.poiService.search(c[0], c[1], radio, limitePorPunto).pipe(catchError(() => of([] as Poi[])))
     );
 
     forkJoin(llamadas).subscribe({
@@ -289,17 +356,15 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
   }
 
   private puntosBusquedaPois(): [number, number][] {
-    const puntos: [number, number][] = [];
     const ruta = this.puntosRutaActual;
-    const hayRuta = ruta.length >= 2;
+    let puntos: [number, number][];
 
-    if (hayRuta) {
-      puntos.push(ruta[0]);
-      puntos.push(ruta[Math.floor(ruta.length / 2)]);
-      puntos.push(ruta[ruta.length - 1]);
+    if (ruta.length >= 2) {
+      //tope de 8 muestras para no disparar demasiadas peticiones a ORS
+      puntos = muestrearRuta(ruta, 700, 8);
     } else {
       const centro = this.map.getCenter();
-      puntos.push([centro.lat, centro.lng]);
+      puntos = [[centro.lat, centro.lng]];
     }
 
     return puntos;
@@ -340,13 +405,74 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
     this.predictionService.getPredictions({ limit: 500 }).subscribe({
       next: (lista) => {
         this.prediccionesCargadas = lista || [];
-        this.dibujarPredicciones(this.prediccionesCargadas);
+        this.calcularFechasPrediccion();
+        this.dibujarPrediccionesDelDia();
       },
       error: () => {
         console.warn('No se pudieron cargar las predicciones.');
         this.prediccionesCargadas = [];
+        this.fechasPrediccion = [];
       }
     });
+  }
+
+  //extrae las fechas distintas de las predicciones cargadas, las ordena
+  //de la mas antigua a la mas reciente y selecciona la primera por
+  //defecto (normalmente "hoy" o el dia siguiente disponible)
+  private calcularFechasPrediccion(): void {
+    const conjunto = new Set<string>();
+    for (const pred of this.prediccionesCargadas) {
+      if (pred.for_date) {
+        conjunto.add(pred.for_date);
+      }
+    }
+
+    const lista = Array.from(conjunto);
+    lista.sort();
+
+    this.fechasPrediccion = lista;
+    this.fechaPrediccionIdx = 0;
+  }
+
+  //dibuja solo las predicciones del dia actualmente seleccionado por el slider
+  private dibujarPrediccionesDelDia(): void {
+    let predsHoy: Prediction[] = this.prediccionesCargadas;
+
+    if (this.fechasPrediccion.length > 0) {
+      const fecha = this.fechasPrediccion[this.fechaPrediccionIdx];
+      predsHoy = this.prediccionesCargadas.filter((p) => p.for_date === fecha);
+    }
+
+    this.dibujarPredicciones(predsHoy);
+  }
+
+  //handler del slider del HTML
+  cambiarDiaPrediccion(idx: number): void {
+    this.fechaPrediccionIdx = idx;
+    this.dibujarPrediccionesDelDia();
+  }
+
+  //texto legible de la fecha seleccionada (vacio si no hay fechas)
+  fechaPrediccionTexto(): string {
+    let texto = '';
+    if (this.fechasPrediccion.length > 0) {
+      texto = formatearFecha(this.fechasPrediccion[this.fechaPrediccionIdx]);
+    }
+    return texto;
+  }
+
+  //version corta para los extremos del slider ("16 may")
+  fechaCorta(iso: string): string {
+    let texto = '';
+    if (iso) {
+      const fecha = new Date(iso);
+      if (!isNaN(fecha.getTime())) {
+        texto = fecha.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+      } else {
+        texto = iso;
+      }
+    }
+    return texto;
   }
 
   private dibujarPredicciones(predicciones: Prediction[]): void {
@@ -388,10 +514,11 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
 
   private popupPrediccion(pred: Prediction, nombreDistrito: string): string {
     const probabilidad = Math.round(pred.probability * 100);
+    const fecha = formatearFecha(pred.for_date);
 
     return `
       <b>${nombreDistrito}</b><br>
-      <small>Predicción para ${pred.for_date}</small><br>
+      <small>Predicción para ${fecha}</small><br>
       Nivel: <b>${pred.level}</b> (${probabilidad}%)<br>
       <small>Objetivo: ${pred.target_type}</small>
     `;
@@ -594,8 +721,10 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
     this.previewLocationOnMap(suggestion);
   }
 
-  //pide preview al backend y pinta polyline + zonas de riesgo
-  private calculateRouteTo(destination: LocationSuggestion): void {
+  //pide preview al backend y pinta polyline + zonas de riesgo.
+  //"avoidDistricts" permite pedir al backend una ruta que evite los
+  //distritos peligrosos (lo usa el boton "Recalcular evitando").
+  private calculateRouteTo(destination: LocationSuggestion, avoidDistricts: number[] = []): void {
     this.loadingRoute = true;
 
     const origenLat = this.selectedOrigen?.lat ?? 40.4167;
@@ -604,23 +733,34 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
     const origen = { lat: origenLat, lon: origenLon, label: origenLabel };
     const destino = { lat: destination.lat, lon: destination.lon, label: destination.text };
 
-    this.routeService.preview(origen, destino, 'driving-car').subscribe({
+    this.routeService.preview(origen, destino, 'driving-car', avoidDistricts).subscribe({
       next: (routeRes: RouteResponse) => {
         this.loadingRoute = false;
+        this.recalculandoRuta = false;
         this.searchCount = this.searchCount + 1;
 
         this.displayLocationOnMap(destination, routeRes.summary);
+        //marcador A en el origen para que se vea claro desde donde sale la ruta
+        this.dibujarMarcadorOrigen(origenLat, origenLon, origenLabel);
         this.dibujarRuta(routeRes.geometry);
         this.dibujarZonasRiesgo(routeRes.risk_zones ?? []);
 
         this.ultimaRuta = { origin: origen, destination: destino, summary: routeRes.summary };
         this.guardarRutaLocal(destination, routeRes.summary);
 
-        const peligros = (routeRes.risk_zones ?? []) as Array<{district: number, level: string, probability: number}>;
+        //resumen + indicaciones para el panel flotante
+        this.resumenRuta = routeRes.summary ?? null;
+        this.pasosRuta = routeRes.steps ?? [];
+
+        const peligros = (routeRes.risk_zones ?? []) as RiskZone[];
+        this.zonasRiesgoActuales = peligros;
+
         const altos = peligros.filter((z) => z.level === 'ALTO');
         const medios = peligros.filter((z) => z.level === 'MEDIO');
         let aviso = 'Ruta calculada correctamente.';
-        if (altos.length > 0) {
+        if (avoidDistricts.length > 0 && peligros.length === 0) {
+          aviso = 'Ruta recalculada sin pasar por zonas de riesgo.';
+        } else if (altos.length > 0) {
           aviso = `Ruta calculada. Atención: ${altos.length} zona(s) con riesgo ALTO en el camino.`;
         } else if (medios.length > 0) {
           aviso = `Ruta calculada. ${medios.length} zona(s) con riesgo MEDIO en el camino.`;
@@ -630,10 +770,25 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
       },
       error: () => {
         this.loadingRoute = false;
+        this.recalculandoRuta = false;
         this.displayLocationOnMap(destination, null);
-        this.showNotification('Se ha encontrado la ubicación, pero no se pudo calcular la ruta.', 'warning');
+        const msg = avoidDistricts.length > 0
+          ? 'No se ha encontrado una ruta alternativa que evite esas zonas.'
+          : 'Se ha encontrado la ubicación, pero no se pudo calcular la ruta.';
+        this.showNotification(msg, 'warning');
       }
     });
+  }
+
+  //repite el calculo de la ruta pidiendo a ORS que evite los distritos
+  //actualmente marcados como peligrosos. Lo dispara el boton del panel
+  //de "zonas de riesgo".
+  recalcularEvitandoRiesgo(): void {
+    if (this.selectedLocation && this.zonasRiesgoActuales.length > 0) {
+      const ids = this.zonasRiesgoActuales.map((z) => z.district);
+      this.recalculandoRuta = true;
+      this.calculateRouteTo(this.selectedLocation, ids);
+    }
   }
 
   //guarda la ultima ruta en localStorage (max 20) para el historial rapido
@@ -655,7 +810,7 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
     this.zoneLayer.clearLayers();
     this.map.flyTo([location.lat, location.lon], 14);
 
-    L.marker([location.lat, location.lon])
+    L.marker([location.lat, location.lon], { icon: iconoDestino() })
       .addTo(this.zoneLayer)
       .bindPopup(`<b>${location.text}</b><br>Pulsa el botón verde para calcular la ruta.`)
       .openPopup();
@@ -673,10 +828,18 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
 
     this.map.flyTo([location.lat, location.lon], 15);
 
-    L.marker([location.lat, location.lon])
+    //marcador del destino (B, rojo)
+    L.marker([location.lat, location.lon], { icon: iconoDestino() })
       .addTo(this.zoneLayer)
       .bindPopup(popupLines.join('<br>'))
       .openPopup();
+  }
+
+  //marcador A para el punto de salida; se llama justo despues de pintar el destino
+  private dibujarMarcadorOrigen(lat: number, lon: number, label: string): void {
+    L.marker([lat, lon], { icon: iconoOrigen() })
+      .addTo(this.zoneLayer)
+      .bindPopup(`<b>Origen</b><br>${label}`);
   }
 
   //primero crea la entrada de historial via POST /routes y luego la marca
@@ -873,8 +1036,34 @@ export class UserHomeComponent implements OnInit, AfterViewInit {
     this.userMenuOpen = !this.userMenuOpen;
   }
 
+  //abre/cierra una pregunta del FAQ de ayuda. si pulsas la misma
+  //que ya estaba abierta, la cierra
+  toggleAyuda(numero: number): void {
+    if (this.ayudaAbierta === numero) {
+      this.ayudaAbierta = 0;
+    } else {
+      this.ayudaAbierta = numero;
+    }
+  }
+
   logout(): void {
     this.authService.logout();
+  }
+
+  //formatos del panel flotante de la ruta
+  duracionLegible(min: number | null | undefined): string {
+    return formatearDuracion(min);
+  }
+
+  metrosLegibles(m: number | null | undefined): string {
+    return formatearMetros(m);
+  }
+
+  //cierra el panel de info de ruta (resumen + zonas de riesgo + indicaciones)
+  cerrarPanelRuta(): void {
+    this.resumenRuta = null;
+    this.pasosRuta = [];
+    this.zonasRiesgoActuales = [];
   }
 
   getSuggestionTitle(suggestion: LocationSuggestion): string {

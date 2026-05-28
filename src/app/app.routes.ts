@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { LandingComponent } from './pages/landing/landing';
 import { PublicHomeComponent } from './pages/public-home/public-home';
 import { LoginComponent } from './pages/login/login';
 import { RegisterComponent } from './pages/register/register';
@@ -17,8 +18,13 @@ import { authGuard } from './core/guards/auth-guard';
 import { adminGuard } from './core/guards/admin-guard';
 
 //rutas de la app con sus guards
+//   "/"          -> landing (presentacion de EcoTraffic)
+//   "/map"       -> mapa publico de invitado
+//   "/home"      -> alias antiguo del mapa, lo dejamos por compatibilidad
 export const routes: Routes = [
-  { path: 'home',      component: PublicHomeComponent },
+  { path: '',        component: LandingComponent },
+  { path: 'map',     component: PublicHomeComponent },
+  { path: 'home',    component: PublicHomeComponent },
   { path: 'login',     component: LoginComponent },
   { path: 'register',  component: RegisterComponent },
   { path: 'recovery',  component: RecoveryComponent },
@@ -35,6 +41,6 @@ export const routes: Routes = [
   { path: 'shop',      component: ShopComponent,      canActivate: [authGuard] },
   { path: 'routes',    component: RoutesComponent,    canActivate: [authGuard] },
 
-  { path: '',   redirectTo: '/home', pathMatch: 'full' },
-  { path: '**', redirectTo: '/home' }
+  //cualquier ruta no reconocida -> landing
+  { path: '**', redirectTo: '' }
 ];

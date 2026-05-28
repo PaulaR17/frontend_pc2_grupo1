@@ -3,21 +3,17 @@
   Tabla con todas las incidencias del mapa.
   Permite crear, editar y cerrar incidencias.
 -->
-<div class="d-flex flex-column vh-100">
+<div class="d-flex flex-column min-vh-100">
 
-  <!-- Navbar -->
-  <nav class="navbar navbar-dark bg-eco-dark px-3">
-    <span class="navbar-brand logo-eco text-white fs-5 mb-0">
-      ECO<span>TRAFFIC</span>
-      <small class="ms-2 badge bg-warning text-dark">ADMIN</small>
-    </span>
+  <!-- Header -->
+  <app-header brandRoute="/dashboard" badge="ADMIN">
     <button class="btn btn-sm btn-outline-light" (click)="volverDashboard()">
       Volver al panel
     </button>
-  </nav>
+  </app-header>
 
   <!-- Contenido -->
-  <main class="flex-grow-1 overflow-auto bg-light p-3 p-md-4">
+  <main class="flex-grow-1 bg-light p-3 p-md-4">
     <div class="container-fluid">
 
       <!-- Cabecera -->
@@ -106,6 +102,8 @@
 
     </div>
   </main>
+
+  <app-footer></app-footer>
 
   <!-- ============================================== -->
   <!--  Modal: nueva / editar incidencia              -->

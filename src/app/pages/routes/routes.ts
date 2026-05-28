@@ -8,12 +8,14 @@ import {
   HistoryRoute,
   FavoriteRoute
 } from '../../core/services/route';
+import { HeaderComponent } from '../../core/components/header/header';
+import { FooterComponent } from '../../core/components/footer/footer';
 
 //mis rutas, con historial y favoritos
 @Component({
   selector: 'app-routes',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HeaderComponent, FooterComponent],
   templateUrl: './routes.html',
   styleUrls: ['./routes.scss']
 })
@@ -192,5 +194,27 @@ export class RoutesComponent implements OnInit {
 
   volver(): void {
     this.router.navigate(['/user-home']);
+  }
+
+  //navega a user-home con los puntos de la ruta como query params para
+  //que se rellene el formulario y se calcule automaticamente
+  recalcular(ruta: HistoryRoute): void {
+    this.router.navigate(['/user-home'], {
+      queryParams: {
+        origin_lat: ruta.origin_lat,
+        origin_lon: ruta.origin_lon,
+        origin_label: ruta.origin_label ?? '',
+        dest_lat: ruta.dest_lat,
+        dest_lon: ruta.dest_lon,
+        dest_label: ruta.dest_label ?? ''
+      }
+    });
+  }
+
+  //version del recalcular para una entrada de favoritos
+  recalcularFavorito(fav: FavoriteRoute): void {
+    if (fav.history) {
+      this.recalcular(fav.history);
+    }
   }
 }

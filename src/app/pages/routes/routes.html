@@ -2,20 +2,17 @@
   Página "Mis rutas" - EcoTraffic
   Dos pestañas: historial y favoritos.
 -->
-<div class="d-flex flex-column vh-100 bg-light">
+<div class="d-flex flex-column min-vh-100 bg-light">
 
-  <!-- Navbar -->
-  <nav class="navbar navbar-dark bg-eco-dark px-3">
-    <span class="navbar-brand logo-eco text-white fs-5 mb-0">
-      ECO<span>TRAFFIC</span>
-    </span>
+  <!-- Header -->
+  <app-header brandRoute="/user-home">
     <button class="btn btn-sm btn-outline-light" (click)="volver()">
       Volver
     </button>
-  </nav>
+  </app-header>
 
   <!-- Contenido -->
-  <main class="flex-grow-1 overflow-auto p-3 p-md-4">
+  <main class="flex-grow-1 p-3 p-md-4">
     <div class="container" style="max-width: 960px;">
 
       <!-- Cabecera -->
@@ -100,6 +97,11 @@
                     <small class="text-muted"> min</small>
                   </td>
                   <td class="text-end">
+                    <button class="btn btn-sm btn-outline-success me-1"
+                            (click)="recalcular(ruta)"
+                            title="Volver a calcular esta ruta">
+                      Volver a calcular
+                    </button>
                     <button class="btn btn-sm btn-outline-warning me-1"
                             *ngIf="!esFavorita(ruta.id)"
                             (click)="marcarFavorito(ruta)"
@@ -166,6 +168,12 @@
                     <small class="text-muted"> min</small>
                   </td>
                   <td class="text-end">
+                    <button class="btn btn-sm btn-outline-success me-1"
+                            *ngIf="fav.history"
+                            (click)="recalcularFavorito(fav)"
+                            title="Volver a calcular esta ruta">
+                      Volver a calcular
+                    </button>
                     <button class="btn btn-sm btn-warning"
                             (click)="quitarFavorito(fav)"
                             title="Quitar de favoritos">
@@ -186,4 +194,6 @@
 
     </div>
   </main>
+
+  <app-footer></app-footer>
 </div>

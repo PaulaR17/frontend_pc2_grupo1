@@ -1,7 +1,11 @@
 // ============================================================
-//  Configuración global de EcoTraffic
-//  Si la URL del backend cambia, se modifica AQUÍ y en ningún
-//  otro sitio. Todos los servicios la leen desde aquí.
+//  Entorno de DESARROLLO de EcoTraffic
+//  - Todos los servicios leen environment.apiUrl desde aqui.
+//  - Si cambia la URL del backend en local, se edita SOLO este
+//    archivo.
+//  - Para produccion existe environment.production.ts; Angular
+//    lo sustituye automaticamente al compilar con
+//    "ng build" (configuracion production).
 // ============================================================
 
 export const environment = {

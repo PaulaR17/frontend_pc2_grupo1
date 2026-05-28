@@ -5,60 +5,54 @@
 -->
 <div class="d-flex flex-column vh-100">
 
-  <!-- Navbar -->
-  <nav class="navbar navbar-dark bg-eco-dark px-3 position-relative">
-    <span class="navbar-brand logo-eco text-white fs-5 mb-0">
-      ECO<span>TRAFFIC</span>
-    </span>
+  <!-- Header -->
+  <app-header brandRoute="/user-home">
+    <button class="btn btn-sm rounded-pill px-3"
+            [class.btn-warning]="mostrarPredicciones"
+            [class.btn-outline-light]="!mostrarPredicciones"
+            (click)="togglePredicciones()"
+            title="Mostrar / ocultar predicciones">
+      {{ mostrarPredicciones ? 'Ocultar predicciones' : 'Ver predicciones' }}
+    </button>
+    <button class="btn btn-sm rounded-pill px-3"
+            [class.btn-primary]="mostrarPois"
+            [class.btn-outline-light]="!mostrarPois"
+            (click)="togglePois()"
+            title="Mostrar / ocultar puntos de interés">
+      {{ mostrarPois ? 'Ocultar puntos de interés' : 'Ver puntos de interés' }}
+    </button>
+    <button class="btn btn-outline-light btn-sm rounded-pill px-3"
+            *ngIf="mostrarPois"
+            (click)="refrescarPois()">
+      Buscar POIs aquí
+    </button>
 
-    <div class="d-flex gap-2 align-items-center">
-      <button class="btn btn-sm rounded-pill px-3"
-              [class.btn-warning]="mostrarPredicciones"
-              [class.btn-outline-light]="!mostrarPredicciones"
-              (click)="togglePredicciones()"
-              title="Mostrar / ocultar predicciones">
-        {{ mostrarPredicciones ? 'Ocultar predicciones' : 'Ver predicciones' }}
-      </button>
-      <button class="btn btn-sm rounded-pill px-3"
-              [class.btn-primary]="mostrarPois"
-              [class.btn-outline-light]="!mostrarPois"
-              (click)="togglePois()"
-              title="Mostrar / ocultar puntos de interés">
-        {{ mostrarPois ? 'Ocultar puntos de interés' : 'Ver puntos de interés' }}
-      </button>
-      <button class="btn btn-outline-light btn-sm rounded-pill px-3"
-              *ngIf="mostrarPois"
-              (click)="refrescarPois()">
-        Buscar POIs aquí
+    <button class="btn btn-warning btn-sm rounded-pill px-3"
+            (click)="abrirReporte()"
+            title="Reportar una incidencia en la zona visible del mapa">
+      Reportar incidencia
+    </button>
+
+    <div class="position-relative">
+      <button class="btn btn-sm rounded-pill d-flex align-items-center gap-2 text-white border-0"
+              style="background: rgba(255,255,255,0.1);"
+              (click)="toggleUserMenu()">
+        <span class="rounded-circle bg-success text-eco-dark fw-bold d-inline-flex align-items-center justify-content-center"
+              style="width: 32px; height: 32px;">
+          {{ userInitials }}
+        </span>
+        <span class="d-none d-sm-inline fw-semibold">{{ user?.name }}</span>
       </button>
 
-      <button class="btn btn-warning btn-sm rounded-pill px-3"
-              (click)="abrirReporte()"
-              title="Reportar una incidencia en la zona visible del mapa">
-        Reportar incidencia
-      </button>
-
-      <div class="position-relative">
-        <button class="btn btn-sm rounded-pill d-flex align-items-center gap-2 text-white border-0"
-                style="background: rgba(255,255,255,0.1);"
-                (click)="toggleUserMenu()">
-          <span class="rounded-circle bg-success text-eco-dark fw-bold d-inline-flex align-items-center justify-content-center"
-                style="width: 32px; height: 32px;">
-            {{ userInitials }}
-          </span>
-          <span class="d-none d-sm-inline fw-semibold">{{ user?.name }}</span>
-        </button>
-
-        <ul class="list-group shadow position-absolute end-0 mt-2"
-            *ngIf="userMenuOpen"
-            style="min-width: 200px; z-index: 1100;">
-          <a class="list-group-item list-group-item-action" routerLink="/profile">Mi perfil</a>
-          <button class="list-group-item list-group-item-action text-danger border-0"
-                  (click)="logout()">Cerrar sesión</button>
-        </ul>
-      </div>
+      <ul class="list-group shadow position-absolute end-0 mt-2"
+          *ngIf="userMenuOpen"
+          style="min-width: 200px; z-index: 1100;">
+        <a class="list-group-item list-group-item-action" routerLink="/profile">Mi perfil</a>
+        <button class="list-group-item list-group-item-action text-danger border-0"
+                (click)="logout()">Cerrar sesión</button>
+      </ul>
     </div>
-  </nav>
+  </app-header>
 
   <!-- Contenido -->
   <div class="container-fluid flex-grow-1 overflow-hidden p-0">
@@ -115,9 +109,10 @@
                      placeholder="Origen (vacío = Puerta del Sol)">
             </div>
 
-            <!-- Sugerencias origen -->
+            <!-- Sugerencias origen: scroll vertical propio para no empujar el panel -->
             <ul class="list-group mb-2"
-                *ngIf="!configurandoUbicacion && mostrarSugerenciasOrigen && origenSuggestions.length > 0">
+                *ngIf="!configurandoUbicacion && mostrarSugerenciasOrigen && origenSuggestions.length > 0"
+                style="max-height: 240px; overflow-y: auto;">
               <li class="list-group-item list-group-item-action d-flex gap-2"
                   *ngFor="let s of origenSuggestions"
                   (click)="selectOrigenSuggestion(s)"
@@ -149,9 +144,10 @@
               </button>
             </div>
 
-            <!-- Sugerencias destino -->
+            <!-- Sugerencias destino: scroll vertical propio -->
             <ul class="list-group mt-2 mb-0"
-                *ngIf="mostrarSugerencias && (loadingSuggestions || locationSuggestions.length > 0)">
+                *ngIf="mostrarSugerencias && (loadingSuggestions || locationSuggestions.length > 0)"
+                style="max-height: 280px; overflow-y: auto;">
               <li class="list-group-item text-muted small" *ngIf="loadingSuggestions">
                 Buscando ubicaciones...
               </li>
@@ -275,6 +271,102 @@
                (error)="$any($event.target).style.display='none'">
         </div>
 
+        <!-- Panel de Ayuda / Preguntas frecuentes -->
+        <div *ngIf="activeTab === 'ayuda'" class="mt-2">
+          <h6 class="text-muted text-uppercase small fw-bold">Ayuda</h6>
+          <div class="accordion" id="ayudaAccordion">
+
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed small fw-semibold"
+                        type="button"
+                        (click)="toggleAyuda(1)"
+                        [class.collapsed]="ayudaAbierta !== 1">
+                  ¿Cómo calculo una ruta?
+                </button>
+              </h2>
+              <div class="accordion-collapse" [class.show]="ayudaAbierta === 1">
+                <div class="accordion-body small text-muted">
+                  Escribe la dirección de destino en el buscador (calle, número
+                  o nombre de distrito). Si dejas el origen vacío, salimos de
+                  la Puerta del Sol. Pulsa el botón verde para calcularla.
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed small fw-semibold"
+                        type="button"
+                        (click)="toggleAyuda(2)"
+                        [class.collapsed]="ayudaAbierta !== 2">
+                  ¿Qué son las zonas de riesgo?
+                </button>
+              </h2>
+              <div class="accordion-collapse" [class.show]="ayudaAbierta === 2">
+                <div class="accordion-body small text-muted">
+                  Distritos donde nuestras predicciones detectan más
+                  incidencias para los próximos días. Activa "Ver predicciones"
+                  para verlas en el mapa.
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed small fw-semibold"
+                        type="button"
+                        (click)="toggleAyuda(3)"
+                        [class.collapsed]="ayudaAbierta !== 3">
+                  ¿Cómo guardo una ruta en favoritos?
+                </button>
+              </h2>
+              <div class="accordion-collapse" [class.show]="ayudaAbierta === 3">
+                <div class="accordion-body small text-muted">
+                  Calcula una ruta y pulsa "Guardar en favoritos". Luego puedes
+                  consultarlas en "Historial y favoritos".
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed small fw-semibold"
+                        type="button"
+                        (click)="toggleAyuda(4)"
+                        [class.collapsed]="ayudaAbierta !== 4">
+                  ¿Qué es la mascota?
+                </button>
+              </h2>
+              <div class="accordion-collapse" [class.show]="ayudaAbierta === 4">
+                <div class="accordion-body small text-muted">
+                  Cada ruta y acción sostenible da experiencia (XP) y chapitas
+                  a tu mascota. Cuando sube de nivel desbloqueas equipamiento
+                  en la tienda.
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed small fw-semibold"
+                        type="button"
+                        (click)="toggleAyuda(5)"
+                        [class.collapsed]="ayudaAbierta !== 5">
+                  ¿Puedo reportar una incidencia?
+                </button>
+              </h2>
+              <div class="accordion-collapse" [class.show]="ayudaAbierta === 5">
+                <div class="accordion-body small text-muted">
+                  Sí. Sitúa el mapa sobre la zona y pulsa "Reportar incidencia"
+                  arriba a la derecha.
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
       </aside>
 
       <!-- Mapa -->
@@ -319,6 +411,89 @@
              *ngIf="loadingRoute"
              style="top: 50px; z-index: 1000;">
           Calculando ruta...
+        </div>
+
+        <!-- Slider de dia para las predicciones -->
+        <div class="position-absolute start-0 m-3 bg-white shadow rounded-3 px-3 py-2"
+             *ngIf="mostrarPredicciones && fechasPrediccion.length > 0"
+             style="top: 60px; z-index: 1000; min-width: 240px;">
+
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <small class="text-muted">Predicciones del día</small>
+            <small class="fw-bold text-eco-dark">{{ fechaPrediccionTexto() }}</small>
+          </div>
+
+          <input type="range"
+                 class="form-range"
+                 min="0"
+                 [max]="fechasPrediccion.length - 1"
+                 [value]="fechaPrediccionIdx"
+                 (input)="cambiarDiaPrediccion(+$any($event.target).value)">
+
+          <div class="d-flex justify-content-between small text-muted">
+            <span>{{ fechaCorta(fechasPrediccion[0]) }}</span>
+            <span>{{ fechaCorta(fechasPrediccion[fechasPrediccion.length - 1]) }}</span>
+          </div>
+        </div>
+
+        <!-- Panel unico de resumen de la ruta: km + duracion, zonas de riesgo
+             (si las hay) e indicaciones paso a paso de ORS -->
+        <div class="position-absolute end-0 m-3 bg-white shadow rounded-3 p-3"
+             *ngIf="!loadingRoute && resumenRuta"
+             style="top: 60px; z-index: 1000; width: 320px; max-width: 90vw;">
+
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="fw-bold small text-eco-dark mb-0">Resumen de la ruta</h6>
+            <button type="button"
+                    class="btn-close btn-sm"
+                    aria-label="Cerrar"
+                    (click)="cerrarPanelRuta()"></button>
+          </div>
+
+          <div class="d-flex gap-4 mb-2">
+            <div>
+              <div class="fw-bold fs-5 text-eco-dark">{{ resumenRuta.distance_km }} km</div>
+              <small class="text-muted">Distancia</small>
+            </div>
+            <div>
+              <div class="fw-bold fs-5 text-eco-dark">{{ duracionLegible(resumenRuta.duration_min) }}</div>
+              <small class="text-muted">Duración estimada</small>
+            </div>
+          </div>
+
+          <!-- Zonas de riesgo: igual que antes, dentro del mismo panel -->
+          <div *ngIf="zonasRiesgoActuales.length > 0" class="mt-2">
+            <h6 class="small fw-bold text-eco-dark mb-1">Zonas de riesgo</h6>
+            <ul class="list-unstyled small mb-2">
+              <li *ngFor="let zona of zonasRiesgoActuales"
+                  class="d-flex justify-content-between align-items-center mb-1">
+                <span class="text-truncate me-2">{{ zona.name || ('Distrito ' + zona.district) }}</span>
+                <span class="badge"
+                      [class.bg-danger]="zona.level === 'ALTO'"
+                      [class.bg-warning]="zona.level === 'MEDIO'"
+                      [class.text-dark]="zona.level === 'MEDIO'"
+                      [class.bg-success]="zona.level === 'BAJO'">
+                  {{ zona.level }}
+                </span>
+              </li>
+            </ul>
+            <button class="btn btn-sm btn-success w-100 mb-2"
+                    (click)="recalcularEvitandoRiesgo()"
+                    [disabled]="recalculandoRuta">
+              {{ recalculandoRuta ? 'Recalculando...' : 'Recalcular evitando' }}
+            </button>
+          </div>
+
+          <!-- Indicaciones paso a paso (ORS, en español) -->
+          <div *ngIf="pasosRuta.length > 0" class="mt-2">
+            <h6 class="small fw-bold text-eco-dark mb-1">Indicaciones</h6>
+            <ol class="ps-3 mb-0 small" style="max-height: 240px; overflow-y: auto;">
+              <li *ngFor="let paso of pasosRuta" class="mb-1">
+                <div>{{ paso.instruction }}</div>
+                <small class="text-muted">{{ metrosLegibles(paso.distance) }}</small>
+              </li>
+            </ol>
+          </div>
         </div>
       </main>
 

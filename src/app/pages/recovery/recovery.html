@@ -4,11 +4,7 @@
 -->
 <div class="d-flex flex-column min-vh-100 bg-light">
 
-  <nav class="navbar navbar-dark bg-eco-dark px-3">
-    <a routerLink="/home" class="navbar-brand logo-eco text-white fs-5 mb-0">
-      ECO<span>TRAFFIC</span>
-    </a>
-  </nav>
+  <app-header brandRoute="/"></app-header>
 
   <main class="flex-grow-1 d-flex align-items-center justify-content-center p-3">
     <div class="card shadow-sm border-0" style="max-width: 480px; width: 100%;">
@@ -62,4 +58,6 @@
       </div>
     </div>
   </main>
+
+  <app-footer></app-footer>
 </div>

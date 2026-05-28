@@ -8,21 +8,17 @@
         * Bar: incidencias por tipo
         * Bar horizontal: incidencias activas vs cerradas
 -->
-<div class="d-flex flex-column vh-100">
+<div class="d-flex flex-column min-vh-100">
 
-  <!-- ===================== NAVBAR ===================== -->
-  <nav class="navbar navbar-dark bg-eco-dark px-3">
-    <span class="navbar-brand logo-eco text-white fs-5 mb-0">
-      ECO<span>TRAFFIC</span>
-      <small class="ms-2 badge bg-warning text-dark">ADMIN</small>
-    </span>
+  <!-- ===================== HEADER ===================== -->
+  <app-header brandRoute="/dashboard" badge="ADMIN">
     <button class="btn btn-sm btn-outline-light" (click)="logout()">
       Cerrar sesión
     </button>
-  </nav>
+  </app-header>
 
   <!-- ===================== CONTENIDO ===================== -->
-  <main class="flex-grow-1 overflow-auto bg-light p-3 p-md-4">
+  <main class="flex-grow-1 bg-light p-3 p-md-4">
     <div class="container-fluid">
 
       <!-- Cabecera -->
@@ -200,4 +196,6 @@
 
     </div>
   </main>
+
+  <app-footer></app-footer>
 </div>
